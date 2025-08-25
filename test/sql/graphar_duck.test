@@ -1,4 +1,4 @@
-# name: test/sql/duckdb_graphar.test
+# name: test/sql/graphar_duck.test
 # description: test duckdb_graphar extension
 # group: [duckdb_graphar]
 
