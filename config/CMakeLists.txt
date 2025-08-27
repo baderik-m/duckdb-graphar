@@ -65,9 +65,9 @@ log_done()
 
 if(BUILD_TESTS)
     log_stage("Building tests of extension...")
-    add_subdirectory(test)
-    set(ALL_OBJECT_FILES
-    ${ALL_OBJECT_FILES} 
-    PARENT_SCOPE)
+    add_subdirectory(${EXTENSION_ROOT_DIR}/test test)
+    # set(ALL_OBJECT_FILES
+    # ${ALL_OBJECT_FILES} 
+    # PARENT_SCOPE)
 endif()
 

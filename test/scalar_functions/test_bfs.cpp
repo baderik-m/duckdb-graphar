@@ -1,9 +1,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "duckdb/common/file_system.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
+
 #include <graphar/api/high_level_writer.h>
 #include <graphar/graph_info.h>
 #include <graphar/status.h>
