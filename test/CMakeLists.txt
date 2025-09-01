@@ -12,7 +12,6 @@ message(STATUS "Imported Catch2 targets: ${catch_targets}")
 include_directories(${EXTENSION_INCLUDES})
 get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2 INTERFACE_INCLUDE_DIRECTORIES)
 include_directories(${CATCH2_INCLUDE_DIRS})
-
 # add_subdirectory(scalar_functions)
 
 # unittest
@@ -20,6 +19,7 @@ include_directories(${CATCH2_INCLUDE_DIRS})
 add_subdirectory(table_functions)
 
 add_executable(unittest_graphar ${ALL_OBJECT_FILES})
+message("${ALL_OBJECT_FILES}")
 target_link_libraries(unittest_graphar ${DUCKDB_EXTENSION_NAME})
 
 # Link against DuckDB and catch2.
