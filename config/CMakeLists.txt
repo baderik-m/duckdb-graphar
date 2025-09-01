@@ -24,7 +24,9 @@ set(EXTENSION_INCLUDES
     $<BUILD_INTERFACE:${GRAPHAR_SOURCE_DIR}/cpp/thirdparty>
     $<BUILD_INTERFACE:${duckdb_SOURCE_DIR}/src/include>
     $<BUILD_INTERFACE:${arrow_SOURCE_DIR}/cpp/src>
+    $<BUILD_INTERFACE:${ARROW_INSTALL_DIR}/include>
 )
+# message("arrow path $<BUILD_INTERFACE:${arrow_SOURCE_DIR}/cpp/src>")
 
 target_include_directories(duckdb_graphar_extension PUBLIC ${EXTENSION_INCLUDES} $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_include_directories(duckdb_graphar_loadable_extension PUBLIC ${EXTENSION_INCLUDES} $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -66,8 +68,5 @@ log_done()
 if(BUILD_TESTS)
     log_stage("Building tests of extension...")
     add_subdirectory(${EXTENSION_ROOT_DIR}/test test)
-    # set(ALL_OBJECT_FILES
-    # ${ALL_OBJECT_FILES} 
-    # PARENT_SCOPE)
 endif()
 
