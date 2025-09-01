@@ -30,7 +30,11 @@ unique_ptr<FunctionData> EdgesVertex::Bind(ClientContext& context, TableFunction
 
     DUCKDB_GRAPHAR_LOG_DEBUG("Load Graph Info");
 
-    auto graph_info = graphar::GraphInfo::Load(file_path).value();
+    auto maybe_graph_info = graphar::GraphInfo::Load(file_path);
+    if (maybe_graph_info.has_error()) {
+        throw IOException("Failed to load graph info from path: %s", file_path);
+    }
+    auto graph_info = maybe_graph_info.value();
 
     DUCKDB_GRAPHAR_LOG_DEBUG("Load Edge Info");
 
@@ -56,7 +60,7 @@ unique_ptr<FunctionData> EdgesVertex::Bind(ClientContext& context, TableFunction
         t.print();
     }
 
-    return std::move(bind_data);
+    return bind_data;
 }
 //-------------------------------------------------------------------
 // State Init
@@ -76,13 +80,13 @@ unique_ptr<GlobalTableFunctionState> EdgesVertexGlobalTableFunctionState::Init(C
         t.print("cast");
     }
 
-    if (time_logging) {
-        t.print("edges");
-    }
-
     auto prefix = GetDirectory(bind_data.GetFilePath());
     auto vertex_count = GetVertexCount(bind_data.GetEdgeInfo(), prefix);
     idx_t iter = 0, end_iter = vertex_count;
+
+    if (time_logging) {
+        t.print("edges");
+    }
 
     if (input.filters) {
         DUCKDB_GRAPHAR_LOG_DEBUG("Found filters");
@@ -128,8 +132,6 @@ unique_ptr<GlobalTableFunctionState> EdgesVertexGlobalTableFunctionState::Init(C
 graphar::Result<vector<std::pair<graphar::IdType, graphar::IdType>>> EdgesVertex::GetAdjListOffsetOfVertices(
     ClientContext& context, const std::shared_ptr<graphar::EdgeInfo>& edge_info, const std::string& prefix,
     graphar::AdjListType adj_list_type, idx_t start, idx_t end) {
-    bool time_logging = GraphArSettings::is_time_logging(context);
-
     ScopedTimer t("GetAdjListOffsetOfVertices");
 
     if (start >= end) {
@@ -173,18 +175,19 @@ graphar::Result<vector<std::pair<graphar::IdType, graphar::IdType>>> EdgesVertex
     }
 
     for (idx_t i = 0; i < chunks_num; ++i) {
-        for (idx_t j = 0; j < arrays[i]->length(); ++j) {
-            idx_t nxt = 0;
-            if (j < arrays[i]->length() - 1) {
-                nxt = arrays[i]->Value(j + 1);
+        const auto values = arrays[i]->raw_values();
+        int64_t arr_len = arrays[i]->length();
+        int64_t current = values[0], nxt{};
+        for (idx_t j = 0; j < arr_len; ++j) {
+            if (j < arr_len - 1) {
+                nxt = values[j + 1];
             } else if (i < chunks_num - 1) {
-                nxt = arrays[i + 1]->Value(0);
+                nxt = arrays[i + 1]->raw_values()[0];
             } else {
                 break;
             }
-            auto np =
-                std::make_pair(static_cast<graphar::IdType>(arrays[i]->Value(j)), static_cast<graphar::IdType>(nxt));
-            result[i * chunk_size + j] = np;
+            result[i * chunk_size + j] = std::make_pair(current, nxt);
+            current = nxt;
         }
     }
     return result;

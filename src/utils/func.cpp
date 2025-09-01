@@ -16,20 +16,27 @@
 namespace duckdb {
 
 LogicalTypeId GraphArFunctions::graphArT2duckT(const std::string& name) {
-    if (name == "bool") {
-        return LogicalTypeId::BOOLEAN;
-    } else if (name == "int32") {
-        return LogicalTypeId::INTEGER;
-    } else if (name == "int64") {
-        return LogicalTypeId::BIGINT;
-    } else if (name == "float") {
-        return LogicalTypeId::FLOAT;
-    } else if (name == "double") {
-        return LogicalTypeId::DOUBLE;
-    } else if (name == "string") {
-        return LogicalTypeId::VARCHAR;
-    }
-    throw NotImplementedException("Unsupported type");
+    if (name == "int32") return LogicalTypeId::INTEGER;
+    if (name == "int64") return LogicalTypeId::BIGINT;
+    if (name == "string") return LogicalTypeId::VARCHAR;
+    if (name == "float") return LogicalTypeId::FLOAT;
+    if (name == "double") return LogicalTypeId::DOUBLE;
+    if (name == "bool") return LogicalTypeId::BOOLEAN;
+    if (name == "date") return LogicalTypeId::DATE;
+
+    throw NotImplementedException("Unsupported type: " + name);
+}
+
+std::shared_ptr<arrow::DataType> GraphArFunctions::graphArT2arrowT(const std::string& name) {
+    if (name == "int32") return arrow::int32();
+    if (name == "int64") return arrow::int64();
+    if (name == "string") return arrow::utf8();
+    if (name == "float") return arrow::float32();
+    if (name == "double") return arrow::float64();
+    if (name == "bool") return arrow::boolean();
+    if (name == "date") return arrow::date64();
+
+    throw NotImplementedException("Unsupported type: " + name);
 }
 
 unique_ptr<ArrowTypeInfo> GraphArFunctions::graphArT2ArrowTypeInfo(const std::string& name) {
@@ -55,24 +62,63 @@ std::string GraphArFunctions::GetNameFromInfo(const std::shared_ptr<graphar::Edg
     return info->GetSrcType() + "_" + info->GetEdgeType() + "_" + info->GetDstType() + ".edge";
 }
 
-std::shared_ptr<graphar::Expression> GraphArFunctions::GetFilter(const std::string filter_type,
-                                                                 const std::string filter_value,
-                                                                 const std::string filter_column) {
-    if (filter_type == "string") {
-        return graphar::_Equal(graphar::_Property(filter_column),
-                               graphar::_Literal(filter_value.substr(1, filter_value.size() - 2)));
-    } else if (filter_type == "int32") {
+int64_t GraphArFunctions::GetVertexNum(std::shared_ptr<graphar::GraphInfo> graph_info, std::string& type) {
+    auto vertex_info = graph_info->GetVertexInfo(type);
+    GAR_ASSIGN_OR_RAISE_ERROR(auto num_file_path, vertex_info->GetVerticesNumFilePath());
+    num_file_path = graph_info->GetPrefix() + num_file_path;
+    GAR_ASSIGN_OR_RAISE_ERROR(auto fs, graphar::FileSystemFromUriOrPath(num_file_path));
+    GAR_ASSIGN_OR_RAISE_ERROR(auto vertex_num, fs->ReadFileToValue<graphar::IdType>(num_file_path));
+    return vertex_num;
+}
+
+graphar::Result<std::shared_ptr<arrow::Schema>> GraphArFunctions::NamesAndTypesToArrowSchema(
+    const vector<std::string>& names, const vector<std::string>& types) {
+    DUCKDB_GRAPHAR_LOG_TRACE("NamesAndTypesToArrowSchema");
+    std::vector<std::shared_ptr<arrow::Field>> fields;
+    for (idx_t i = 0; i < names.size(); ++i) {
+        fields.push_back(std::make_shared<arrow::Field>(names[i], graphArT2arrowT(types[i])));
+    }
+    DUCKDB_GRAPHAR_LOG_TRACE("NamesAndTypesToArrowSchema: returning...");
+    return arrow::schema(fields);
+}
+
+std::shared_ptr<arrow::Table> GraphArFunctions::EmptyTableFromNamesAndTypes(const vector<std::string>& names,
+                                                                            const vector<std::string>& types) {
+    auto maybe_schema = NamesAndTypesToArrowSchema(names, types);
+    if (maybe_schema.has_error()) {
+        throw InternalException(maybe_schema.error().message());
+    }
+    auto maybe_table = arrow::Table::MakeEmpty(maybe_schema.value());
+    if (!maybe_table.ok()) {
+        throw InternalException(maybe_table.status().message());
+    }
+    return maybe_table.ValueUnsafe();
+}
+
+std::shared_ptr<graphar::Expression> GraphArFunctions::GetFilter(const std::string& filter_type,
+                                                                 const std::string& filter_value,
+                                                                 const std::string& filter_column) {
+    if (filter_type == "int32") {
         return graphar::_Equal(graphar::_Property(filter_column), graphar::_Literal(std::stoi(filter_value)));
-    } else if (filter_type == "int64") {
+    }
+    if (filter_type == "int64") {
         // Bug: stoll -> long long int, need only int64_t == long long
         return graphar::_Equal(graphar::_Property(filter_column),
                                graphar::_Literal((int64_t)(std::stoll(filter_value))));
-    } else if (filter_type == "float") {
+    }
+    if (filter_type == "string") {
+        return graphar::_Equal(graphar::_Property(filter_column),
+                               graphar::_Literal(filter_value.substr(1, filter_value.size() - 2)));
+    }
+    if (filter_type == "float") {
         return graphar::_Equal(graphar::_Property(filter_column), graphar::_Literal(std::stof(filter_value)));
-    } else if (filter_type == "double") {
+    }
+    if (filter_type == "double") {
         return graphar::_Equal(graphar::_Property(filter_column), graphar::_Literal(std::stod(filter_value)));
     }
-    throw NotImplementedException("Unsupported filter type");
+    // TODO: bool?
+
+    throw NotImplementedException("Unsupported filter type: " + filter_type);
 }
 
 std::string GetYamlContent(const std::string& path) {
@@ -107,7 +153,7 @@ std::int64_t GetCount(const std::string& path) {
     return fs->ReadFileToValue<graphar::IdType>(path).value();
 }
 
-std::int64_t GetVertexCount(const std::shared_ptr<graphar::EdgeInfo>& edge_info, std::string& directory) {
+std::int64_t GetVertexCount(const std::shared_ptr<graphar::EdgeInfo>& edge_info, const std::string& directory) {
     std::string vertex_num_path = edge_info->GetVerticesNumFilePath(graphar::AdjListType::ordered_by_source).value();
 
     return GetCount(directory + vertex_num_path);

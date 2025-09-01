@@ -46,7 +46,11 @@ unique_ptr<FunctionData> ReadVertices::Bind(ClientContext& context, TableFunctio
     DUCKDB_GRAPHAR_LOG_DEBUG("Get type " + v_type + '\n' + "Load Graph Info and Vertex Info");
 
     auto bind_data = make_uniq<ReadBindData>();
-    auto graph_info = graphar::GraphInfo::Load(file_path).value();
+    auto maybe_graph_info = graphar::GraphInfo::Load(file_path);
+    if (maybe_graph_info.has_error()) {
+        throw IOException("Failed to load graph info from path: %s", file_path);
+    }
+    auto graph_info = maybe_graph_info.value();
 
     auto vertex_info = graph_info->GetVertexInfo(v_type);
 
@@ -59,16 +63,16 @@ unique_ptr<FunctionData> ReadVertices::Bind(ClientContext& context, TableFunctio
     SetBindData(graph_info, *vertex_info, bind_data);
 
     names = bind_data->flatten_prop_names;
-    for (auto& return_type : bind_data->flatten_prop_types) {
-        return_types.emplace_back(GraphArFunctions::graphArT2duckT(return_type));
-    }
+    std::transform(bind_data->flatten_prop_types.begin(), bind_data->flatten_prop_types.end(),
+                   std::back_inserter(return_types),
+                   [](const auto& return_type) { return GraphArFunctions::graphArT2duckT(return_type); });
 
     DUCKDB_GRAPHAR_LOG_DEBUG("Bind finish");
     if (time_logging) {
         t.print();
     }
 
-    return std::move(bind_data);
+    return bind_data;
 }
 //-------------------------------------------------------------------
 // GetReader
@@ -93,6 +97,10 @@ void ReadVertices::SetFilter(ReadBaseGlobalTableFunctionState& gstate, ReadBindD
     }
     if (filter_column == GID_COLUMN_INTERNAL) {
         graphar::IdType vid = std::stoll(filter_value);
+        int64_t vertex_num = GraphArFunctions::GetVertexNum(bind_data.graph_info, bind_data.params[0]);
+        if (vid < 0 or vid >= vertex_num) {
+            throw BinderException("Vertex id is out of range");
+        }
         for (idx_t i = 0; i < gstate.readers.size(); ++i) {
             seek_vid(*gstate.readers[i], vid, filter_column);
         }

@@ -1,6 +1,6 @@
 #include "storage/graphar_transaction_manager.hpp"
 
-#include "duckdb/main/attached_database.hpp"
+#include <duckdb/main/attached_database.hpp>
 
 namespace duckdb {
 
@@ -32,7 +32,7 @@ void GraphArTransactionManager::RollbackTransaction(Transaction& transaction) {
 }
 
 void GraphArTransactionManager::Checkpoint(ClientContext& context, bool force) {
-    auto& transaction = GraphArTransaction::Get(context, db.GetCatalog());
+    throw NotImplementedException("GraphArTransactionManager::Checkpoint");
 }
 
 }  // namespace duckdb
