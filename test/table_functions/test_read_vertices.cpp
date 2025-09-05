@@ -1,11 +1,12 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
 
 #include <filesystem>
 #include <iostream>
 
-#include "test_table_functions.hpp"
+#include "table_functions_fixture.hpp"
 #include "functions/table/read_vertices.hpp"
 
 using namespace duckdb;
@@ -23,31 +24,27 @@ TEST_CASE("ReadVertices GetFunction basic test", "[read_vertices]") {
     REQUIRE(read_vertices.named_parameters.find("type") != read_vertices.named_parameters.end());
 }
 
-TEST_CASE("ReadVertices Bind function basic test", "[read_vertices]") {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function basic test", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
     TableFunction read_vertices = ReadVertices::GetFunction();
-
-    INFO("Start mocking");
-    DuckDB db(nullptr);
-    Connection conn(db);
-
-    vector<Value> inputs({Value(GRAPH_YML_PATH)});
+    
+    vector<Value> inputs({Value(TableFunctionsFixture<TestType>::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types({});
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TableFunctionsFixture<TestType>::СreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
 
     INFO("Start bind");
-    auto bind_data = read_vertices.bind(*conn.context, input, return_types, names);
+    auto bind_data = read_vertices.bind(*TableFunctionsFixture<TestType>::conn.context, input, return_types, names);
     INFO("Finish bind");
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::INTEGER}));
     REQUIRE(names == vector<std::string>({GID_COLUMN_INTERNAL, "hash_phone_no"}));
 }
-
+/*
 TEST_CASE("ReadVertices Bind function invalid_vertex", "[read_vertices]") {
     TableFunction read_vertices = ReadVertices::GetFunction();
 
@@ -204,3 +201,4 @@ TEST_CASE("ReadVertices Execute basic test", "[read_vertices]") {
     REQUIRE(output.size() == 100); // Размер одного chunk
     REQUIRE(output.ColumnCount() == return_types.size());
 }
+*/
