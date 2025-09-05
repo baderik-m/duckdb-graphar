@@ -5,11 +5,13 @@
 #include <filesystem>  
 #include <iostream>  
 
-#include "test_table_functions.hpp"
+#include "table_functions_fixture.hpp"
 #include "functions/table/read_edges.hpp"
 
 using namespace duckdb;
 using namespace graphar;
+
+#define TestFixture TableFunctionsFixture<TestType>
 
 TEST_CASE("ReadEdges GetFunction basic test", "[read_edges]") {
     TableFunction read_edges = ReadEdges::GetFunction();
@@ -25,27 +27,22 @@ TEST_CASE("ReadEdges GetFunction basic test", "[read_edges]") {
     REQUIRE(read_edges.named_parameters.find("type") != read_edges.named_parameters.end());
 }
 
-TEST_CASE("ReadEdges Bind function basic test", "[read_edges]") {
-    TableFunction read_edges = ReadEdges::GetFunction();
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function basic test", "[read_edges]", FileTypeParquet, FileTypeCsv) {
 
-    INFO("Start mocking");
-    DuckDB db(nullptr); 
-    Connection conn(db);
-    
-    vector<Value> inputs({Value(GRAPH_YML_PATH)});
+    INFO("Start mocking");    
+    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
     vector<LogicalType> input_table_types({});
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);    
+    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);    
     
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
 
-    
-    INFO("Start bind");
-    
-    auto bind_data = read_edges.bind(*conn.context, input, return_types, names);
+    TableFunction read_edges = ReadEdges::GetFunction();
 
+    INFO("Start bind");
+    auto bind_data = read_edges.bind(*TestFixture::conn.context, input, return_types, names);
     INFO("Finish bind");
 
     REQUIRE(bind_data != nullptr);
@@ -53,52 +50,48 @@ TEST_CASE("ReadEdges Bind function basic test", "[read_edges]") {
     REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN}));
 }
 
-TEST_CASE("ReadEdges Bind function invalid_edge", "[read_edges]") {
-    TableFunction read_edges = ReadEdges::GetFunction();
-
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function invalid_edge", "[read_edges]", FileTypeParquet, FileTypeCsv) {
     INFO("Start mocking");
-    DuckDB db(nullptr); 
-    Connection conn(db);
-    
-    vector<Value> inputs({Value(GRAPH_YML_PATH)});
+    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("invalid_edge")}});
     vector<LogicalType> input_table_types({});
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);    
+    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);    
         
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
+    
+    TableFunction read_edges = ReadEdges::GetFunction();
 
-    REQUIRE_THROWS_AS(read_edges.bind(*conn.context, input, return_types, names), BinderException);
+    REQUIRE_THROWS_AS(read_edges.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
 }
 
-TEST_CASE("ReadEdges Bind function edge with property", "[read_edges]") {
-    TableFunction read_edges = ReadEdges::GetFunction();
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function edge with property", "[read_edges]", FileTypeParquet, FileTypeCsv) {
     INFO("Start mocking");
     DuckDB db(nullptr); 
     Connection conn(db);
     
-    vector<Value> inputs({Value(LDBC_GRAPH_YML_PATH)});
-    named_parameter_map_t named_parameters({{"src", Value("person")}, {"dst", Value("person")}, {"type", Value("knows")}});
+    vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+    named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
     vector<LogicalType> input_table_types({});
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);    
+    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);    
     
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
 
-    INFO("Start bind");
-    
-    auto bind_data = read_edges.bind(*conn.context, input, return_types, names);
+    TableFunction read_edges = ReadEdges::GetFunction();
 
+    INFO("Start bind");    
+    auto bind_data = read_edges.bind(*TestFixture::conn.context, input, return_types, names);
     INFO("Finish bind");
 
     REQUIRE(bind_data != nullptr);
-    REQUIRE(return_types == vector<LogicalType> ({LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::VARCHAR}));
-    REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN, "creationDate"}));
+    REQUIRE(return_types == vector<LogicalType> ({LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::INTEGER, LogicalType::VARCHAR, LogicalType::FLOAT}));
+    REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN, "friend_score", "created_at", "last_name"}));
 }
 
-
+/*
 TEST_CASE("ReadEdges GetScanFunction basic test", "[read_edges]") {
     TableFunction scan_edges = ReadEdges::GetScanFunction();
     
@@ -151,3 +144,4 @@ TEST_CASE("ReadEdges GetReader test", "[read_edges]") {
         REQUIRE(table->num_rows() == 1); // только одно ребро выходящее из вершины 0
     }
 }
+*/

@@ -12,6 +12,7 @@
 using namespace duckdb;
 using namespace graphar;
 
+#define TestFixture TableFunctionsFixture<TestType>
 
 TEST_CASE("ReadVertices GetFunction basic test", "[read_vertices]") {
     TableFunction read_vertices = ReadVertices::GetFunction();
@@ -25,81 +26,68 @@ TEST_CASE("ReadVertices GetFunction basic test", "[read_vertices]") {
     REQUIRE(read_vertices.named_parameters.find("type") != read_vertices.named_parameters.end());
 }
 
-/*
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "test_load_yml", "[tmp]", FileTypeParquet, FileTypeCsv){
-    auto res = graphar::GraphInfo::Load(TableFunctionsFixture<TestType>::path_trial_graph);
-    if (res.has_error()){
-        const Status& status = res.error();
-        std::string error_message = status.message();
-        REQUIRE("" == error_message);
-    }
-}
-*/
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function basic test", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
-    TableFunction read_vertices = ReadVertices::GetFunction();
-    
-    vector<Value> inputs({Value(TableFunctionsFixture<TestType>::path_trial_graph)});
+    INFO("Start mocking");
+    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types({});
-    auto input = TableFunctionsFixture<TestType>::СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
+    
+    TableFunction read_vertices = ReadVertices::GetFunction();
 
     INFO("Start bind");
-    auto bind_data = read_vertices.bind(*TableFunctionsFixture<TestType>::conn.context, input, return_types, names);
+    auto bind_data = read_vertices.bind(*TestFixture::conn.context, input, return_types, names);
     INFO("Finish bind");
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::INTEGER}));
     REQUIRE(names == vector<std::string>({GID_COLUMN_INTERNAL, "hash_phone_no"}));
 }
-/*
-TEST_CASE("ReadVertices Bind function invalid_vertex", "[read_vertices]") {
-    TableFunction read_vertices = ReadVertices::GetFunction();
 
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function invalid_vertex", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
     INFO("Start mocking");
-    DuckDB db(nullptr);
-    Connection conn(db);
-
-    vector<Value> inputs({Value(GRAPH_YML_PATH)});
+    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("InvalidVertex")}});
     vector<LogicalType> input_table_types({});
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
 
-    REQUIRE_THROWS_AS(read_vertices.bind(*conn.context, input, return_types, names), BinderException);
-}
-
-TEST_CASE("ReadVertices Bind function vertex with basic properties", "[read_vertices]") {
     TableFunction read_vertices = ReadVertices::GetFunction();
 
-    INFO("Start mocking");
-    DuckDB db(nullptr);
-    Connection conn(db);
+    REQUIRE_THROWS_AS(read_vertices.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
+}
 
-    vector<Value> inputs({Value(LDBC_GRAPH_YML_PATH)});
-    named_parameter_map_t named_parameters({{"type", Value("person")}});
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind function vertex with basic properties", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
+    INFO("Start mocking");
+    vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+
+    named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types({});
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
+    
+    TableFunction read_vertices = ReadVertices::GetFunction();
 
     INFO("Start bind");
-    auto bind_data = read_vertices.bind(*conn.context, input, return_types, names);
+    auto bind_data = read_vertices.bind(*TestFixture::conn.context, input, return_types, names);
     INFO("Finish bind");
 
     REQUIRE(bind_data != nullptr);
-    REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::VARCHAR}));
-    REQUIRE(names == vector<std::string>({GID_COLUMN_INTERNAL, "id", "firstName", "lastName", "gender"}));
+    REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::INTEGER, LogicalType::VARCHAR, LogicalType::VARCHAR}));
+    REQUIRE(names == vector<std::string>({GID_COLUMN_INTERNAL, "hash_phone_no", "first_name", "last_name"}));
 }
-
+    
+/*
 TEST_CASE("ReadVertices Bind function vertex with array properties", "[read_vertices]") {
     TableFunction read_vertices = ReadVertices::GetFunction();
 
@@ -120,7 +108,8 @@ TEST_CASE("ReadVertices Bind function vertex with array properties", "[read_vert
     REQUIRE_THROWS_AS(read_vertices.bind(*conn.context, input, return_types, names), NotImplementedException);
     INFO("Finish bind");
 }
-
+*/
+/*
 TEST_CASE("ReadVertices GetScanFunction basic test", "[read_vertices]") {
     TableFunction scan_vertices = ReadVertices::GetScanFunction();
 
@@ -129,7 +118,8 @@ TEST_CASE("ReadVertices GetScanFunction basic test", "[read_vertices]") {
     REQUIRE(scan_vertices.filter_pushdown == true);
     REQUIRE(scan_vertices.projection_pushdown == true);
 }
-
+*/
+/*
 TEST_CASE("ReadVertices GetReader test", "[read_vertices]") {
     INFO("Creating db");
     DuckDB db(nullptr);
@@ -171,25 +161,24 @@ TEST_CASE("ReadVertices GetReader test", "[read_vertices]") {
         REQUIRE(table->num_rows() == 1);
     }
 }
-
-TEST_CASE("ReadVertices Execute basic test", "[read_vertices]") {
-    INFO("Creating db");
-    DuckDB db(nullptr);
-    Connection conn(db);
+*/
+/*
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Execute basic test", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
     INFO("Start mocking");
-    vector<Value> inputs({Value(LDBC_GRAPH_YML_PATH)});
-    named_parameter_map_t named_parameters({{"type", Value("person")}});
+    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+    named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types;
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
     INFO("Finish mocking");
-    
+
     auto read_vertices =  ReadVertices::GetFunction();
-    auto bind_data_uniq = read_vertices.bind(*conn.context, input, return_types, names);
-    
-    auto& bind_data = bind_data_uniq->Cast<ReadBindData>();
+    auto bind_data_uniq = read_vertices.bind(*TestFixture::conn.context, input, return_types, names);
+    REQUIRE(bind_data_uniq != nullptr);
+
+    auto& bind_data = bind_data_uniq->template Cast<ReadBindData>();
 
     vector<column_t> columns_idx(return_types.size());
     for (idx_t i = 0; i < return_types.size(); i++) {
@@ -197,19 +186,19 @@ TEST_CASE("ReadVertices Execute basic test", "[read_vertices]") {
     }
 
     TableFunctionInitInput init_input(bind_data_uniq.get(), columns_idx, vector<idx_t>(), nullptr);
-    auto global_state = read_vertices.init_global(*conn.context, init_input);
+    auto global_state = read_vertices.init_global(*TestFixture::conn.context, init_input);
     INFO("Created global state");
 
     DataChunk output;
-    output.Initialize(*conn.context, return_types);
+    output.Initialize(*TestFixture::conn.context, return_types);
     INFO("Created output");
 
     auto funcInput = TableFunctionInput{*bind_data_uniq, nullptr, global_state};
     INFO("Created funcInput");
 
-    ReadVertices::Execute(*conn.context, funcInput, output);
+    ReadVertices::Execute(*TestFixture::conn.context, funcInput, output);
     
-    REQUIRE(output.size() == 100); // Размер одного chunk
+    REQUIRE(output.size() == 1024); // Размер одного chunk
     REQUIRE(output.ColumnCount() == return_types.size());
 }
 */
