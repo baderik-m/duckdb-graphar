@@ -24,6 +24,29 @@ struct Edge {
     int64_t dst;
 };
 
+struct PropetrySchema{
+    std::string name;
+    std::string data_type;
+    bool is_nullable;
+    bool is_primary;
+};
+struct EdgesSchema {
+    std::string src_type;
+    std::string type;
+    std::string dst_type;
+    graphar::IdType chunk_size;
+    bool directed;
+    std::vector<PropetrySchema> properties;
+    std::vector<Edge> values;
+    graphar::IdType num_vertices;
+};
+struct VerteciesSchema {
+    std::string type;
+    graphar::IdType chunk_size;
+    std::vector<PropetrySchema> properties;
+    std::vector<std::vector<int64_t>> values;
+};
+
 std::string get_folder(std::string path){
     size_t found;
     found=path.find_last_of("/\\");
@@ -76,26 +99,10 @@ private:
 
     std::string CreateTestGraph(
         const std::string&, 
-        const std::vector<int64_t>&,
-        const std::vector<Edge>&,
-        const std::vector<int64_t>&,
-        const std::string&,
-        const std::string&, 
-        const std::string&,
-        bool,
-        graphar::IdType,
-        graphar::IdType,
-        std::unordered_map<std::string, std::vector<std::string>>
+        const std::vector<VerteciesSchema>&,
+        const std::vector<EdgesSchema>& 
     );
-    std::string CreateTestGraph(
-        const std::string&, 
-        const std::vector<int64_t>&,
-        const std::vector<Edge>&,
-        const std::string&, 
-        const std::string&,
-        bool directed,
-        graphar::IdType
-    );
+
     void EnsureTestDataDirectory();
 };
 

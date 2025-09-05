@@ -12,6 +12,7 @@
 using namespace duckdb;
 using namespace graphar;
 
+
 TEST_CASE("ReadVertices GetFunction basic test", "[read_vertices]") {
     TableFunction read_vertices = ReadVertices::GetFunction();
 
@@ -24,6 +25,16 @@ TEST_CASE("ReadVertices GetFunction basic test", "[read_vertices]") {
     REQUIRE(read_vertices.named_parameters.find("type") != read_vertices.named_parameters.end());
 }
 
+/*
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "test_load_yml", "[tmp]", FileTypeParquet, FileTypeCsv){
+    auto res = graphar::GraphInfo::Load(TableFunctionsFixture<TestType>::path_trial_graph);
+    if (res.has_error()){
+        const Status& status = res.error();
+        std::string error_message = status.message();
+        REQUIRE("" == error_message);
+    }
+}
+*/
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function basic test", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
     TableFunction read_vertices = ReadVertices::GetFunction();
     
