@@ -13,7 +13,8 @@ include_directories(${EXTENSION_INCLUDES})
 get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2 INTERFACE_INCLUDE_DIRECTORIES)
 include_directories(${CATCH2_INCLUDE_DIRS})
 # add_subdirectory(scalar_functions)
-
+message("fixtures: ${EXTENSION_ROOT_DIR}/test/fixture")
+include_directories(${EXTENSION_ROOT_DIR}/test/fixture)
 # unittest
 # add_subdirectory(storage)
 add_subdirectory(table_functions)
