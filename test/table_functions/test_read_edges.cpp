@@ -33,7 +33,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function basic 
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
     vector<LogicalType> input_table_types({});
-    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);    
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);    
     
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -55,7 +55,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function invali
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("invalid_edge")}});
     vector<LogicalType> input_table_types({});
-    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);    
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);    
         
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -70,11 +70,11 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function edge w
     INFO("Start mocking");
     DuckDB db(nullptr); 
     Connection conn(db);
-    
+    INFO("Path: " + TestFixture::path_trial_graph);
     vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
     vector<LogicalType> input_table_types({});
-    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);    
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);    
     
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -112,7 +112,7 @@ TEST_CASE("ReadEdges GetReader test", "[read_edges]") {
     vector<Value> inputs({Value(GRAPH_YML_PATH)});
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
     vector<LogicalType> input_table_types;
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = CreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;

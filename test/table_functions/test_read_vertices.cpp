@@ -31,7 +31,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function bas
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types({});
-    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -53,7 +53,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function inv
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("InvalidVertex")}});
     vector<LogicalType> input_table_types({});
-    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -70,7 +70,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind function vert
 
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types({});
-    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -98,7 +98,7 @@ TEST_CASE("ReadVertices Bind function vertex with array properties", "[read_vert
     vector<Value> inputs({Value(LDBC_GRAPH_WITH_FEATURE_YML_PATH)});
     named_parameter_map_t named_parameters({{"type", Value("person")}});
     vector<LogicalType> input_table_types({});
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = CreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -129,7 +129,7 @@ TEST_CASE("ReadVertices GetReader test", "[read_vertices]") {
     vector<Value> inputs({Value(GRAPH_YML_PATH)});
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types;
-    auto input = СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = CreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
@@ -168,7 +168,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Execute basic test
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types;
-    auto input = TestFixture::СreateMockBindInput(inputs, named_parameters, input_table_types);
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
     vector<LogicalType> return_types;
     vector<std::string> names;
