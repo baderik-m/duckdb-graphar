@@ -74,6 +74,6 @@ log_done()
 
 if(BUILD_TESTS)
     log_stage("Building tests of extension...")
-    add_subdirectory(${EXTENSION_ROOT_DIR}/test test)
+    add_subdirectory(${EXTENSION_ROOT_DIR}/tests tests)
 endif()
 

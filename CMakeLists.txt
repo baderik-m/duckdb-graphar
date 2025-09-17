@@ -10,6 +10,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(UNIX AND NOT APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+endif()
+
 include(FetchContent)
 include(GNUInstallDirs)
 include(ExternalProject)
@@ -144,10 +150,11 @@ log_done()
 set(DUCKDB_EXTENSION_CONFIGS "${CMAKE_CURRENT_SOURCE_DIR}/config/extension_config.cmake")
 
 log_stage("Declaring DuckDB")
-if(LOAD_TESTS)
-  set(BUILD_UNITTESTS ON CACHE BOOL "")
+if (LOAD_TESTS)  # DuckDB sql logical tests
+    set(BUILD_UNITTESTS ON CACHE BOOL "")
+else()
+    set(BUILD_UNITTESTS OFF CACHE BOOL "")
 endif()
-
 set(ENABLE_SANITIZER OFF CACHE BOOL "")
 set(ENABLE_UBSAN OFF CACHE BOOL "")
 set(DISABLE_VPTR_SANITIZER ON CACHE BOOL "")

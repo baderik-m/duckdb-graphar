@@ -1,0 +1,264 @@
+#pragma once
+#include <catch2/catch_test_macros.hpp>
+
+#include "duckdb.hpp"
+
+#include <string>
+
+#include <graphar/api/high_level_writer.h>
+#include <graphar/graph_info.h>
+#include <graphar/status.h>
+
+
+#include <cassert>
+#include <iostream>
+#include <sstream>
+#include <variant>
+#include <filesystem>
+
+using PropertyValue = std::variant<int32_t, int64_t, float, double, std::string, bool>;
+
+struct PropertySchema{
+    std::string name;
+    std::string data_type;
+    bool is_nullable;
+    bool is_primary;
+};
+
+struct EdgeData {
+    int64_t src;
+    int64_t dst;
+    std::unordered_map<std::string, PropertyValue> properties;
+};
+struct EdgesSchema {
+    std::string src_type;
+    std::string type;
+    std::string dst_type;
+    graphar::IdType chunk_size;
+    bool directed;
+    std::vector<PropertySchema> properties;
+    std::vector<EdgeData> edges;
+    graphar::IdType num_vertices;
+};
+struct VertexData {
+    int64_t ind;
+    std::unordered_map<std::string, PropertyValue> properties;
+};
+struct VerticesSchema {
+    std::string type;
+    graphar::IdType chunk_size;
+    std::vector<PropertySchema> properties;
+    std::vector<VertexData> vertices;
+};
+
+
+template <typename T>
+requires(std::is_same_v<T, graphar::builder::Vertex> || std::is_same_v<T, graphar::builder::Edge>)
+static void FillProperties(T& obj, const std::vector<PropertySchema>& propeties_schema, const std::unordered_map<std::string, PropertyValue>& properties_data) {
+    for (auto ind_p = 0; ind_p < propeties_schema.size(); ++ind_p){
+        const auto& prop_schema = propeties_schema[ind_p];
+        auto it = properties_data.find(prop_schema.name);
+        if (it == properties_data.end()) {
+            throw std::runtime_error("Property not found in data: " + prop_schema.name);
+        }
+        const auto& prop_val = it->second;
+
+        if (prop_schema.data_type == "int32") {
+            if (std::holds_alternative<int32_t>(prop_val)) {
+                obj.AddProperty(prop_schema.name, std::get<int32_t>(prop_val));
+            } else {
+                throw std::runtime_error("Type mismatch for property '" + prop_schema.name + "': expected int32");
+            }
+        }
+        else if (prop_schema.data_type == "int64") {
+            if (std::holds_alternative<int64_t>(prop_val)) {
+                obj.AddProperty(prop_schema.name, std::get<int64_t>(prop_val));
+            } else {
+                throw std::runtime_error("Type mismatch for property '" + prop_schema.name + "': expected int64");
+            }
+        }
+        else if (prop_schema.data_type == "float") {
+            if (std::holds_alternative<float>(prop_val)) {
+                obj.AddProperty(prop_schema.name, std::get<float>(prop_val));
+            } else {
+                throw std::runtime_error("Type mismatch for property '" + prop_schema.name + "': expected float");
+            }
+        }
+        else if (prop_schema.data_type == "double") {
+            if (std::holds_alternative<double>(prop_val)) {
+                obj.AddProperty(prop_schema.name, std::get<double>(prop_val));
+            } else {
+                throw std::runtime_error("Type mismatch for property '" + prop_schema.name + "': expected double");
+            }
+        }
+        else if (prop_schema.data_type == "string") {
+            if (std::holds_alternative<std::string>(prop_val)) {
+                obj.AddProperty(prop_schema.name, std::get<std::string>(prop_val));
+            } else {
+                throw std::runtime_error("Type mismatch for property '" + prop_schema.name + "': expected string");
+            }
+        }
+        else if (prop_schema.data_type == "bool") {
+            if (std::holds_alternative<bool>(prop_val)) {
+                obj.AddProperty(prop_schema.name, std::get<bool>(prop_val));
+            } else {
+                throw std::runtime_error("Type mismatch for property '" + prop_schema.name + "': expected bool");
+            }
+        }
+        else {
+            throw std::runtime_error("Unsupported data type: " + prop_schema.data_type);
+        }
+    } 
+}
+
+struct FileTypeParquet {};
+struct FileTypeCsv {};
+struct FileTypeOrc {};
+struct FileTypeJson {};
+
+template <typename FileTypeTag> 
+class BasicGrapharFixture { 
+private:
+    static size_t num_graph;
+    std::filesystem::path tmp_folder;
+    std::vector<std::filesystem::path> graph_folders;
+    static constexpr graphar::FileType GetFileType() {
+        if constexpr (std::is_same_v<FileTypeTag, FileTypeParquet>) return graphar::FileType::PARQUET;
+        else if constexpr (std::is_same_v<FileTypeTag, FileTypeCsv>) return graphar::FileType::CSV;
+        else if constexpr (std::is_same_v<FileTypeTag, FileTypeOrc>) return graphar::FileType::ORC;
+        else if constexpr (std::is_same_v<FileTypeTag, FileTypeJson>) return graphar::FileType::JSON;
+        else throw std::logic_error("Unsupported file type tag");
+    };
+    static constexpr std::string GetFileTypeName() {
+        if constexpr (std::is_same_v<FileTypeTag, FileTypeParquet>) return "parquet";
+        else if constexpr (std::is_same_v<FileTypeTag, FileTypeCsv>) return "csv";
+        else if constexpr (std::is_same_v<FileTypeTag, FileTypeOrc>) return "orc";
+        else if constexpr (std::is_same_v<FileTypeTag, FileTypeJson>) return "json";
+        else throw std::logic_error("Unsupported file type tag");
+    };
+    void EnsureTestDataDirectory(){
+        std::filesystem::create_directories(tmp_folder);
+    
+        if (!std::filesystem::exists(tmp_folder)) {
+            throw std::runtime_error("Failed to create test data directory: " + tmp_folder.string());
+        }
+    };
+protected:
+    duckdb::DuckDB db;
+    duckdb::Connection conn;
+    
+    BasicGrapharFixture(): db(nullptr), conn(db), tmp_folder(std::filesystem::temp_directory_path() / "duckdb_graphar/data/") {};
+    ~BasicGrapharFixture(){
+        for (const auto& graph_folder : graph_folders){
+            std::filesystem::remove_all(graph_folder);
+        }
+    }
+
+    std::string CreateTestGraph(
+            const std::string& graph_name, 
+            const std::vector<VerticesSchema>& vertices_list,
+            const std::vector<EdgesSchema>& edges_list 
+        ){
+        std::filesystem::path graph_folder;
+        do {
+            graph_folder = tmp_folder / GetFileTypeName() / (std::to_string(num_graph) + "_" + graph_name);
+            ++num_graph;
+        } while(std::filesystem::exists(graph_folder));
+
+        graph_folders.push_back(graph_folder);
+        std::string output_path = graph_folder.string() + "/";
+        std::string graph_path = output_path + graph_name + ".graph.yaml";
+        INFO("Creating graph: " + graph_name + " in " + graph_path);
+        auto graph_info = graphar::GraphInfo::Load(graph_path).value_or(nullptr);
+        if (graph_info != nullptr) {
+            throw std::runtime_error("Graph already exists");
+        }
+
+        auto version = graphar::InfoVersion::Parse("gar/v1").value();
+
+        // Vertex Info
+        std::unordered_map<std::string, const VerticesSchema*> type_schema;
+        graphar::VertexInfoVector vertex_infos = {};
+        for (const auto& vertices_schema: vertices_list){
+            std::vector<graphar::Property> properties;
+            for (const auto& prop_schema: vertices_schema.properties){
+                properties.push_back(graphar::Property(
+                    prop_schema.name, graphar::DataType::TypeNameToDataType(prop_schema.data_type),
+                    prop_schema.is_primary, prop_schema.is_nullable)
+                );
+            }
+            const graphar::PropertyGroupVector pgs = {
+                std::make_shared<graphar::PropertyGroup>(properties, GetFileType(), "")
+            };
+            vertex_infos.push_back(graphar::CreateVertexInfo(
+                vertices_schema.type, vertices_schema.chunk_size,
+                pgs, {}, 
+                "vertex/" + vertices_schema.type + "/", version));
+            REQUIRE(!vertex_infos.back()->Dump().has_error());
+            REQUIRE(vertex_infos.back()->Save(output_path + vertices_schema.type + ".vertex.yaml").ok());
+            type_schema[vertices_schema.type] = &vertices_schema;
+        }
+
+        // Edge Info
+        graphar::EdgeInfoVector edges_infos = {};
+
+        const auto adjacent_types = {graphar::AdjListType::ordered_by_source, graphar::AdjListType::ordered_by_dest};
+        graphar::AdjacentListVector adjacent_lists = {};
+        for (const auto& adjacent_type : adjacent_types){ 
+            adjacent_lists.push_back(graphar::CreateAdjacentList(adjacent_type, GetFileType())); 
+        }
+
+        for (const auto& edges_schema: edges_list){
+            graphar::IdType src_chunk_size = type_schema[edges_schema.src_type]->chunk_size;
+            graphar::IdType dst_chunk_size = type_schema[edges_schema.dst_type]->chunk_size;
+            auto edge_chunk_size = (edges_schema.chunk_size > 0) ? edges_schema.chunk_size : src_chunk_size * dst_chunk_size;
+            edges_infos.push_back(graphar::CreateEdgeInfo(
+                edges_schema.src_type, edges_schema.type, edges_schema.dst_type, 
+                edge_chunk_size, src_chunk_size, dst_chunk_size, edges_schema.directed,
+                adjacent_lists,
+                {}, "edge/" + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + "/", version));
+            REQUIRE(!edges_infos.back()->Dump().has_error());
+            REQUIRE(edges_infos.back()->Save(output_path + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + ".edge.yaml").ok());
+        }
+
+        // Graph Info
+        graph_info = graphar::CreateGraphInfo(graph_name, vertex_infos, edges_infos, {}, "./", version);
+        REQUIRE(!graph_info->Dump().has_error());
+        REQUIRE(graph_info->Save(graph_path).ok());
+
+
+        // vertices_list
+        for (auto ind_v = 0; ind_v < vertices_list.size(); ++ind_v){
+            const auto& vertices_schema = vertices_list[ind_v];
+            auto v_builder = graphar::builder::VerticesBuilder::Make(vertex_infos[ind_v], output_path, 0).value();
+            for (const auto& vertex_data : vertices_schema.vertices) {
+                auto vertex = graphar::builder::Vertex(vertex_data.ind);
+                FillProperties<graphar::builder::Vertex>(vertex, vertices_schema.properties, vertex_data.properties);
+
+                REQUIRE(v_builder->AddVertex(vertex).ok());
+            }
+            REQUIRE(v_builder->Dump().ok());
+        }
+
+        // edges_list
+        for (auto ind_e = 0; ind_e < edges_list.size(); ++ind_e){
+            const auto& edges_schema = edges_list[ind_e];
+            auto num_vertices = edges_schema.num_vertices;
+            for (const auto& adjacent_type : adjacent_types){
+                auto e_builder = graphar::builder::EdgesBuilder::Make(edges_infos[ind_e], output_path, adjacent_type, num_vertices).value();
+                for (const auto& edge_data : edges_schema.edges) {
+                    auto edge = graphar::builder::Edge(edge_data.src, edge_data.dst);
+                    FillProperties<graphar::builder::Edge>(edge, edges_schema.properties, edge_data.properties);
+                    REQUIRE(e_builder->AddEdge(edge).ok());
+                }
+                REQUIRE(e_builder->Dump().ok());
+            }
+        }   
+
+        return graph_path;
+    }
+
+};
+
+template <typename FileTypeTag> 
+size_t BasicGrapharFixture<FileTypeTag>::num_graph = 0;
