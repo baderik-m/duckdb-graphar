@@ -88,7 +88,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function edge w
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(return_types == vector<LogicalType> ({LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::INTEGER, LogicalType::VARCHAR, LogicalType::FLOAT}));
-    REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN, "friend_score", "created_at", "last_name"}));
+    REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN, "friend_score", "created_at", "tmp_"}));
 }
 
 /*

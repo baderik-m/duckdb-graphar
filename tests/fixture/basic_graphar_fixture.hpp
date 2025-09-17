@@ -209,6 +209,19 @@ protected:
         }
 
         for (const auto& edges_schema: edges_list){
+
+            std::vector<graphar::Property> properties;
+            for (const auto& prop_schema: edges_schema.properties){
+                properties.push_back(graphar::Property(
+                    prop_schema.name, graphar::DataType::TypeNameToDataType(prop_schema.data_type),
+                    prop_schema.is_primary, prop_schema.is_nullable)
+                );
+            }
+            graphar::PropertyGroupVector pgs = {};
+            if (properties.size() > 0){
+                pgs.push_back(std::make_shared<graphar::PropertyGroup>(properties, GetFileType(), "test_pg"));
+            }
+
             graphar::IdType src_chunk_size = type_schema[edges_schema.src_type]->chunk_size;
             graphar::IdType dst_chunk_size = type_schema[edges_schema.dst_type]->chunk_size;
             auto edge_chunk_size = (edges_schema.chunk_size > 0) ? edges_schema.chunk_size : src_chunk_size * dst_chunk_size;
@@ -216,7 +229,7 @@ protected:
                 edges_schema.src_type, edges_schema.type, edges_schema.dst_type, 
                 edge_chunk_size, src_chunk_size, dst_chunk_size, edges_schema.directed,
                 adjacent_lists,
-                {}, "edge/" + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + "/", version));
+                pgs, "edge/" + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + "/", version));
             REQUIRE(!edges_infos.back()->Dump().has_error());
             REQUIRE(edges_infos.back()->Save(output_path + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + ".edge.yaml").ok());
         }

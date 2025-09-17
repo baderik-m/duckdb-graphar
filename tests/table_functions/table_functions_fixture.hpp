@@ -48,7 +48,8 @@ public:
                         {3, 4}, 
                         {3, 5}, 
                         {4, 5}
-                    }
+                    },
+                    5
                 )
             }
         );
@@ -83,7 +84,8 @@ public:
                         {3, 4, {{"friend_score", int32_t{1}}, {"created_at", std::string{"2021-01-01"}}, {"tmp_", float{0.1}}}}, 
                         {3, 5, {{"friend_score", int32_t{1}}, {"created_at", std::string{"2021-01-01"}}, {"tmp_", float{0.1}}}}, 
                         {4, 5, {{"friend_score", int32_t{1}}, {"created_at", std::string{"2021-01-01"}}, {"tmp_", float{0.1}}}}
-                    }
+                    },
+                    5
                 )
             }
         );
