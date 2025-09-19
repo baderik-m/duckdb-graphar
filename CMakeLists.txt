@@ -8,6 +8,7 @@ set(EXTENSION_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE STRING "Extension root 
 # =============================================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(UNIX AND NOT APPLE)
@@ -58,33 +59,33 @@ ExternalProject_Add(
   arrow
   PREFIX ${ARROW_PREFIX_DIR}
   GIT_REPOSITORY https://github.com/apache/arrow.git
-  GIT_TAG apache-arrow-17.0.0
+  GIT_TAG apache-arrow-19.0.1
   SOURCE_SUBDIR cpp
   CMAKE_ARGS
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    -DARROW_BUILD_SHARED=ON
-    -DARROW_BUILD_STATIC=OFF
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     -DARROW_BUILD_TESTS=OFF
     -DARROW_BUILD_BENCHMARKS=OFF
     -DARROW_BUILD_EXAMPLES=OFF
-    -DARROW_DEPENDENCY_SOURCE=BUNDLED
-    -DARROW_OPTIONAL_INSTALL=ON
+    -DARROW_RPATH_ORIGIN=ON
+
     -DARROW_COMPUTE=ON
+    -DARROW_CSV=ON
     -DARROW_DATASET=ON
     -DARROW_FILESYSTEM=ON
-    -DARROW_S3=ON
-    -DARROW_PARQUET=ON
-    -DARROW_ORC=ON
     -DARROW_JSON=ON
-    -DARROW_WITH_ZLIB=ON
-    -DARROW_WITH_ZSTD=ON
+    -DARROW_ORC=ON
+    -DARROW_PARQUET=ON
+    -DARROW_S3=ON
     -DARROW_WITH_BROTLI=OFF
     -DARROW_WITH_BZ2=OFF
     -DARROW_WITH_LZ4=OFF
     -DARROW_WITH_SNAPPY=ON
-    -DARROW_CSV=ON
+    -DARROW_WITH_ZLIB=ON
+    -DARROW_WITH_ZSTD=ON
+
     -DARROW_GANDIVA=OFF
     -DARROW_TESTING=OFF
+
     -DCMAKE_INSTALL_PREFIX=${ARROW_INSTALL_DIR}
   BUILD_ALWAYS OFF
   INSTALL_DIR ${ARROW_INSTALL_DIR}
@@ -108,7 +109,6 @@ ExternalProject_Add(
   graphar
   PREFIX ${GRAPHAR_PREFIX_DIR}
   GIT_REPOSITORY https://github.com/apache/incubator-graphar.git
-  # GIT_TAG main
   GIT_TAG 1a44bc343e0e846df129c78152f6310a1d678429
   SOURCE_SUBDIR cpp
   CMAKE_ARGS
@@ -129,14 +129,20 @@ set_target_properties(graphar::graphar_shared PROPERTIES
 add_dependencies(graphar::graphar_shared graphar arrow)
 
 # Set paths for shared libraries
+if(APPLE)
+    set(RPATH_ORIGIN "@loader_path")
+else()
+    set(RPATH_ORIGIN "\$ORIGIN")
+endif()
+
 set(CMAKE_BUILD_RPATH
-    "@loader_path"
+    "${RPATH_ORIGIN}"
     "${GRAPHAR_LIB_DIR}"
     "${ARROW_LIB_DIR}"
 )
 
 set(CMAKE_INSTALL_RPATH
-    "@loader_path"
+    "${RPATH_ORIGIN}"
     "${GRAPHAR_LIB_DIR}"
     "${ARROW_LIB_DIR}"
 )
@@ -162,7 +168,7 @@ set(DISABLE_VPTR_SANITIZER ON CACHE BOOL "")
 FetchContent_Declare(
     duckdb
     GIT_REPOSITORY https://github.com/duckdb/duckdb.git
-    GIT_TAG v1.3.2
+    GIT_TAG v1.4.0
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
 )

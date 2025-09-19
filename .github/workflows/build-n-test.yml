@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   pr-title-check:
@@ -54,7 +55,31 @@ jobs:
           - os: macos-14
             ccache_path: /opt/homebrew/opt/ccache/libexec
             deps_command: |
-              brew update
+              TAP_NAME="local/pinned" && \
+              CMAKE_COMMIT="b4e46db74e74a8c1650b38b1da222284ce1ec5ce" && \
+
+              echo "==> Uninstalling existing cmake (if any)..." && \
+              brew uninstall --ignore-dependencies cmake || true && \
+
+              echo "==> Creating local tap (no git)..." && \
+              brew tap-new --no-git "$TAP_NAME" >/dev/null && \
+
+              CMAKE_FORMULA_DIR="$(brew --repo "$TAP_NAME")/Formula" && \
+              mkdir -p "$CMAKE_FORMULA_DIR" && \
+
+              CMAKE_RB_LINK="https://raw.githubusercontent.com/Homebrew/homebrew-core/$CMAKE_COMMIT/Formula/c/cmake.rb" && \
+              CMAKE_RB_PATH="${CMAKE_FORMULA_DIR}/cmake.rb" && \
+
+              echo "==> Downloading cmake.rb from $CMAKE_RB_LINK" && \
+              curl -fsSL "$CMAKE_RB_LINK" -o "$CMAKE_RB_PATH" && \
+
+              echo "==> Installing CMake 3.31.6 from custom tap..." && \
+              brew install "$TAP_NAME/cmake" && \
+
+              echo "==> Adding CMake to PATH" && \
+              echo "/opt/homebrew/opt/cmake/bin" >> \$GITHUB_PATH && \
+
+              echo "==> Installing additional dependencies" && \
               brew install curl ccache
 
     steps:
@@ -65,8 +90,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: |
           echo "::group::Installing CLang Format"
-          sudo apt-get update
-          sudo apt-get install clang-format-15
+          sudo apt-get install -y --no-install-recommends clang-format-15
           echo "::endgroup::"
 
       - name: Check C++ Code Style
@@ -129,7 +153,7 @@ jobs:
             local ARROW_BUILD_DIR=$DEPS_DIR/arrow-prefix/src/arrow-build
             local PROTOBUF_INSTALL_DIR=$ARROW_BUILD_DIR/protobuf_ep-install
             local GRAPHAR_CLI_DIR=$DEPS_DIR/graphar-prefix/src/graphar/cli
-            
+
             local CMAKE_ARGS=(
               --config-settings=cmake.define.Arrow_DIR="$ARROW_INSTALL_DIR/lib/cmake/Arrow"
               --config-settings=cmake.define.Parquet_DIR="$ARROW_INSTALL_DIR/lib/cmake/Parquet"
@@ -139,7 +163,7 @@ jobs:
               --config-settings=cmake.define.Protobuf_LIBRARIES="$PROTOBUF_INSTALL_DIR/lib/libprotobuf.a"
               --config-settings=cmake.define.CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
             )
-            
+
             pip3 install "$GRAPHAR_CLI_DIR" "${CMAKE_ARGS[@]}"
           }
           install_cli
@@ -150,7 +174,7 @@ jobs:
           generate_graphar_data() {
             set -euxo pipefail
             local ROOT_DIR=$(pwd)
-  
+
             local GRAPH_DIR=$ROOT_DIR/data/snap-musae-github
             local GRAPH_IMPORT_TEMPLATE=$GRAPH_DIR/import.script.git.yaml
             local GRAPH_IMPORT=$GRAPH_DIR/import.git.yaml
@@ -158,29 +182,29 @@ jobs:
             mkdir -p "$GRAPH_RESULT_DIR"
             cp "$GRAPH_IMPORT_TEMPLATE" "$GRAPH_IMPORT"
             sed -i "s|\$DIR_PATH|$GRAPH_DIR|g" "$GRAPH_IMPORT"
-          
+
             graphar import -c "$GRAPH_IMPORT"
             rm "$GRAPH_IMPORT"
 
             local GRAPH_NAME=$(grep "name:" "$GRAPH_IMPORT_TEMPLATE" | head -n1 | sed 's/^[^:]*:[[:space:]]*//')
             local GRAPH_INFO_FILE=$GRAPH_RESULT_DIR/$GRAPH_NAME.graph.yaml
-  
+
             local edges=$(find "$GRAPH_RESULT_DIR" -maxdepth 1 -type f -name "*edge*" -exec basename {} \;)
             local vertices=$(find "$GRAPH_RESULT_DIR" -maxdepth 1 -type f -name "*vertex*" -exec basename {} \;)
-            
+
             {
               echo "edges:"
               for edge in "${edges[@]}"; do
               echo "  - $edge"
               done
-          
+
               echo "name: $GRAPH_NAME"
-          
+
               echo "vertices:"
               for vertex in "${vertices[@]}"; do
               echo "  - $vertex"
               done
-          
+
               echo "version: gar/v1"
             } > "$GRAPH_INFO_FILE"
           }
@@ -191,10 +215,32 @@ jobs:
         run: |
           build/_deps/duckdb-build/test/unittest "[graphar]" --reporter console  || exit 1
 
+      - name: Prepare artifacts for upload
+        run: |
+          mkdir -p upload-artifacts
+          mkdir -p upload-artifacts/arrow
+          mkdir -p upload-artifacts/graphar
+
+          cp build/_deps/duckdb-build/duckdb upload-artifacts/duckdb_with_extension
+          cp build/_deps/duckdb-build/extension/duckdb_graphar/duckdb_graphar.duckdb_extension upload-artifacts/
+          if [ "${{ matrix.os }}" == "macos-14" ]; then
+            cp ./build/_deps/arrow-install/lib/libarrow.1900.dylib upload-artifacts/arrow/
+            cp ./build/_deps/arrow-install/lib/libarrow_dataset.1900.dylib upload-artifacts/arrow/
+            cp ./build/_deps/arrow-install/lib/libarrow_acero.1900.dylib upload-artifacts/arrow/
+            cp ./build/_deps/arrow-install/lib/libparquet.1900.dylib upload-artifacts/arrow/
+
+            cp ./build/_deps/graphar-install/lib/libgraphar.dylib upload-artifacts/graphar/
+          else
+            cp ./build/_deps/arrow-install/lib/libarrow.so.1900 upload-artifacts/arrow/
+            cp ./build/_deps/arrow-install/lib/libarrow_dataset.so.1900 upload-artifacts/arrow/
+            cp ./build/_deps/arrow-install/lib/libarrow_acero.so.1900 upload-artifacts/arrow/
+            cp ./build/_deps/arrow-install/lib/libparquet.so.1900 upload-artifacts/arrow/
+
+            cp ./build/_deps/graphar-install/lib/libgraphar.so upload-artifacts/graphar/
+          fi
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: duckdb-graphar-${{ matrix.os }}
-          path: |
-            ./build/_deps/duckdb-build/extension/duckdb_graphar/duckdb_graphar.duckdb_extension
-          if-no-files-found: error
+          path: upload-artifacts
