@@ -26,10 +26,12 @@ TEST_CASE("OneMoreHop GetFunction basic test", "[one_more_hop]") {
     REQUIRE(one_more_hop.named_parameters.find("vid") != one_more_hop.named_parameters.end());
 }
 
-
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute functions vertex without properties", "[one_more_hop]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute functions vertex without properties", "[one_more_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking data for bind");
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_graph);
+
     named_parameter_map_t named_parameters({{"vid", Value("1")}});
     vector<LogicalType> input_table_types({});
     auto bind_input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
@@ -41,28 +43,36 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute fu
     TableFunction one_more_hop = OneMoreHop::GetFunction();
     
     INFO("Bind test");
-    auto bind_data = one_more_hop.bind(*TestFixture::conn.context, bind_input, return_types, names);
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = one_more_hop.bind(*TestFixture::conn.context, bind_input, return_types, names));
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(names == vector<std::string>({SRC_GID_COLUMN, DST_GID_COLUMN}));
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT}));
     INFO("Finish bind test");
 
-    OneMoreHopGlobalTableFunctionState gstate(*TestFixture::conn.context, bind_data->template Cast<TwoHopBindData>());
-    TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
 
+    unique_ptr<GlobalTableFunctionState> gstate;
+    REQUIRE_NOTHROW(gstate = one_more_hop.init_global(*TestFixture::conn.context, func_init_input));
+
+    TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
     DataChunk res;
+    res.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    one_more_hop.function(*TestFixture::conn.context, func_input, res);
+    REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, res));
     REQUIRE(res.size() == 3); // 1 2; 1 3; 2 3;
     REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind function with invalid vertex id", "[one_more_hop]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind function with invalid vertex id", "[one_more_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_graph);
+
     named_parameter_map_t named_parameters({{"vid", Value("3141")}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
@@ -76,9 +86,11 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind function with 
     REQUIRE_THROWS_AS(one_more_hop.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute functions vertex with properties", "[one_more_hop]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute functions vertex with properties", "[one_more_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_feature_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("2")}});
     vector<LogicalType> input_table_types({});
@@ -91,26 +103,29 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute fun
     TableFunction one_more_hop = OneMoreHop::GetFunction();
     
     INFO("Bind test");
-    auto bind_data = one_more_hop.bind(*TestFixture::conn.context, input, return_types, names);
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = one_more_hop.bind(*TestFixture::conn.context, input, return_types, names));
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN}));
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT}));
     INFO("Finish bind test");
 
-    OneMoreHopGlobalTableFunctionState gstate(*TestFixture::conn.context, bind_data->template Cast<TwoHopBindData>());
-    TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
 
+    unique_ptr<GlobalTableFunctionState> gstate;
+    REQUIRE_NOTHROW(gstate = one_more_hop.init_global(*TestFixture::conn.context, func_init_input));
+    
+    TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
     DataChunk res;
+    res.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    one_more_hop.function(*TestFixture::conn.context, func_input, res);
+    REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, res));
     REQUIRE(res.size() == 3); // 2 3; 2 4; 3 4;
     REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
 }
-
-
 
 
 
@@ -126,10 +141,12 @@ TEST_CASE("TwoHop GetFunction basic test", "[two_hop]") {
     REQUIRE(two_hop.named_parameters.find("vid") != two_hop.named_parameters.end());
 }
 
-
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functions vertex without properties", "[two_hop]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functions vertex without properties", "[two_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking data for bind");
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_graph);
+
     named_parameter_map_t named_parameters({{"vid", Value("1")}});
     vector<LogicalType> input_table_types({});
     auto bind_input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
@@ -141,28 +158,36 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functi
     TableFunction two_hop = TwoHop::GetFunction();
     
     INFO("Bind test");
-    auto bind_data = two_hop.bind(*TestFixture::conn.context, bind_input, return_types, names);
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = two_hop.bind(*TestFixture::conn.context, bind_input, return_types, names));
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(names == vector<std::string>({SRC_GID_COLUMN, DST_GID_COLUMN}));
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT}));
     INFO("Finish bind test");
 
-    OneMoreHopGlobalTableFunctionState gstate(*TestFixture::conn.context, bind_data->template Cast<TwoHopBindData>());
-    TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
 
+    unique_ptr<GlobalTableFunctionState> gstate;
+    REQUIRE_NOTHROW(gstate = two_hop.init_global(*TestFixture::conn.context, func_init_input));
+    
+    TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
     DataChunk res;
+    res.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    two_hop.function(*TestFixture::conn.context, func_input, res);
+    REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, res));
     REQUIRE(res.size() == 6); // 1 2; 1 3; 2 3; 2 4; 3 4; 3 5;
     REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind function with invalid vertex id", "[two_hop]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind function with invalid vertex id", "[two_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_graph);
+
     named_parameter_map_t named_parameters({{"vid", Value("3141")}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
@@ -176,9 +201,11 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind function with inva
     REQUIRE_THROWS_AS(two_hop.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"TwoHop Bind and Execute functions vertex with properties", "[two_hop]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"TwoHop Bind and Execute functions vertex with properties", "[two_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_feature_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("2")}});
     vector<LogicalType> input_table_types({});
@@ -191,20 +218,25 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"TwoHop Bind and Execute functio
     TableFunction two_hop = TwoHop::GetFunction();
     
     INFO("Bind test");
-    auto bind_data = two_hop.bind(*TestFixture::conn.context, input, return_types, names);
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = two_hop.bind(*TestFixture::conn.context, input, return_types, names));
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN}));
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT}));
     INFO("Finish bind test");
+    
+    TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
 
-    OneMoreHopGlobalTableFunctionState gstate(*TestFixture::conn.context, bind_data->template Cast<TwoHopBindData>());
+    unique_ptr<GlobalTableFunctionState> gstate;
+    REQUIRE_NOTHROW(gstate = two_hop.init_global(*TestFixture::conn.context, func_init_input));
+    
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
-
     DataChunk res;
+    res.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    two_hop.function(*TestFixture::conn.context, func_input, res);
+    REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, res));
     REQUIRE(res.size() == 5); // 2 3; 2 4; 3 4; 3 5; 4 5;
     REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");

@@ -26,7 +26,7 @@ TEST_CASE("ReadVertices GetFunction basic test", "[read_vertices]") {
     REQUIRE(read_vertices.named_parameters.find("type") != read_vertices.named_parameters.end());
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function basic test", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function basic test", "[read_vertices]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
@@ -40,7 +40,8 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function bas
     TableFunction read_vertices = ReadVertices::GetFunction();
 
     INFO("Start bind");
-    auto bind_data = read_vertices.bind(*TestFixture::conn.context, input, return_types, names);
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = read_vertices.bind(*TestFixture::conn.context, input, return_types, names));
     INFO("Finish bind");
 
     REQUIRE(bind_data != nullptr);
@@ -48,7 +49,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function bas
     REQUIRE(names == vector<std::string>({GID_COLUMN_INTERNAL, "hash_phone_no"}));
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function invalid_vertex", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function invalid_vertex", "[read_vertices]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
     named_parameter_map_t named_parameters({{"type", Value("InvalidVertex")}});
@@ -64,9 +65,12 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function inv
     REQUIRE_THROWS_AS(read_vertices.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind function vertex with basic properties", "[read_vertices]", FileTypeParquet, FileTypeCsv) {
+
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind function vertex with basic properties", "[read_vertices]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+    
+    INFO("Path: " + TestFixture::path_trial_feature_graph);
 
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types({});
@@ -78,13 +82,29 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind function vert
     
     TableFunction read_vertices = ReadVertices::GetFunction();
 
-    INFO("Start bind");
-    auto bind_data = read_vertices.bind(*TestFixture::conn.context, input, return_types, names);
-    INFO("Finish bind");
+    INFO("Bind test");
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = read_vertices.bind(*TestFixture::conn.context, input, return_types, names));
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::INTEGER, LogicalType::VARCHAR, LogicalType::VARCHAR}));
     REQUIRE(names == vector<std::string>({GID_COLUMN_INTERNAL, "hash_phone_no", "first_name", "last_name"}));
+    INFO("Finish bind test");
+
+    TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
+
+    unique_ptr<GlobalTableFunctionState> gstate;
+    REQUIRE_NOTHROW(gstate = read_vertices.init_global(*TestFixture::conn.context, func_init_input));
+
+    TableFunctionInput func_input(bind_data.get(), nullptr, gstate.get());
+    DataChunk res;
+    res.Initialize(*TestFixture::conn.context, return_types);
+
+    INFO("Execute test");
+    REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, res));
+    REQUIRE(res.size() == 5);
+    REQUIRE(res.ColumnCount() == 4);
+    INFO("Finish execute test");
 }
     
 /*

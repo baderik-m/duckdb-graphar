@@ -27,32 +27,12 @@ TEST_CASE("ReadEdges GetFunction basic test", "[read_edges]") {
     REQUIRE(read_edges.named_parameters.find("type") != read_edges.named_parameters.end());
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function basic test", "[read_edges]", FileTypeParquet, FileTypeCsv) {
-
-    INFO("Start mocking");    
-    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
-    named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
-    vector<LogicalType> input_table_types({});
-    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);    
-    
-    vector<LogicalType> return_types;
-    vector<std::string> names;
-    INFO("Finish mocking");
-
-    TableFunction read_edges = ReadEdges::GetFunction();
-
-    INFO("Start bind");
-    auto bind_data = read_edges.bind(*TestFixture::conn.context, input, return_types, names);
-    INFO("Finish bind");
-
-    REQUIRE(bind_data != nullptr);
-    REQUIRE(return_types == vector<LogicalType> ({LogicalType::BIGINT, LogicalType::BIGINT}));
-    REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN}));
-}
-
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function invalid_edge", "[read_edges]", FileTypeParquet, FileTypeCsv) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function invalid_edge", "[read_edges]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_graph);
+
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("invalid_edge")}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);    
@@ -66,12 +46,54 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function invali
     REQUIRE_THROWS_AS(read_edges.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function edge with property", "[read_edges]", FileTypeParquet, FileTypeCsv) {
-    INFO("Start mocking");
-    DuckDB db(nullptr); 
-    Connection conn(db);
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function basic test", "[read_edges]", FILE_TYPES_FOR_TEST) {
+
+    INFO("Start mocking");    
+    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+
     INFO("Path: " + TestFixture::path_trial_graph);
+
+    named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
+    vector<LogicalType> input_table_types({});
+    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);    
+    
+    vector<LogicalType> return_types;
+    vector<std::string> names;
+    INFO("Finish mocking");
+
+    TableFunction read_edges = ReadEdges::GetFunction();
+ 
+    INFO("Bind test");    
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = read_edges.bind(*TestFixture::conn.context, input, return_types, names));
+
+    REQUIRE(bind_data != nullptr);
+    REQUIRE(return_types == vector<LogicalType> ({LogicalType::BIGINT, LogicalType::BIGINT}));
+    REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN}));
+    INFO("Finish bind test");
+
+    TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
+
+    unique_ptr<GlobalTableFunctionState> gstate;
+    REQUIRE_NOTHROW(gstate = read_edges.init_global(*TestFixture::conn.context, func_init_input));
+    
+    TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    DataChunk res;
+    res.Initialize(*TestFixture::conn.context, return_types);
+    
+    INFO("Execute test");
+    read_edges.function(*TestFixture::conn.context, func_input, res);
+    REQUIRE(res.size() == 7);
+    REQUIRE(res.ColumnCount() == 2);
+    INFO("Finish execute test");
+}
+
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute functions edge with property", "[read_edges]", FILE_TYPES_FOR_TEST) {
+    INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+
+    INFO("Path: " + TestFixture::path_trial_feature_graph);
+
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);    
@@ -82,13 +104,29 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function edge w
 
     TableFunction read_edges = ReadEdges::GetFunction();
 
-    INFO("Start bind");    
-    auto bind_data = read_edges.bind(*TestFixture::conn.context, input, return_types, names);
-    INFO("Finish bind");
+    INFO("Bind test"); 
+    unique_ptr<FunctionData> bind_data;
+    REQUIRE_NOTHROW(bind_data = read_edges.bind(*TestFixture::conn.context, input, return_types, names));
 
     REQUIRE(bind_data != nullptr);
     REQUIRE(return_types == vector<LogicalType> ({LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::INTEGER, LogicalType::VARCHAR, LogicalType::FLOAT}));
     REQUIRE(names == vector<std::string> ({SRC_GID_COLUMN, DST_GID_COLUMN, "friend_score", "created_at", "tmp_"}));
+    INFO("Finish bind test");
+
+    TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
+    
+    unique_ptr<GlobalTableFunctionState> gstate;
+    REQUIRE_NOTHROW(gstate = read_edges.init_global(*TestFixture::conn.context, func_init_input));
+    
+    TableFunctionInput func_input(bind_data.get(), nullptr, gstate.get());
+    DataChunk res;
+    res.Initialize(*TestFixture::conn.context, return_types);
+
+    INFO("Execute test");
+    REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, res));
+    REQUIRE(res.size() == 7);
+    REQUIRE(res.ColumnCount() == 5);
+    INFO("Finish execute test");
 }
 
 /*

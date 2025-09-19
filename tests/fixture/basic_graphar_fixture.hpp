@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sstream>
 #include <variant>
+#include <fstream>
 #include <filesystem>
 
 using PropertyValue = std::variant<int32_t, int64_t, float, double, std::string, bool>;
@@ -116,6 +117,7 @@ struct FileTypeCsv {};
 struct FileTypeOrc {};
 struct FileTypeJson {};
 
+#define FILE_TYPES_FOR_TEST FileTypeParquet
 template <typename FileTypeTag> 
 class BasicGrapharFixture { 
 private:
@@ -143,11 +145,38 @@ private:
             throw std::runtime_error("Failed to create test data directory: " + tmp_folder.string());
         }
     };
+    bool RemovePrefix(const std::string& path) const{
+        std::string needle = "prefix:";    
+        const std::string tmp = path + ".tmp";  
+        std::ifstream in(path);  
+        std::ofstream out(tmp, std::ios::trunc);  
+        std::string line;  
+        bool removed = false;  
+        while (std::getline(in, line)) {  
+            if (line.find(needle) == std::string::npos) {  
+                    out << line << '\n';  
+            } else {  
+                removed = true;  
+            }  
+        }  
+        in.close();  
+        out.close();  
+        if (removed) {
+            std::error_code ec;  
+            std::filesystem::rename(tmp, path, ec);  
+            if (ec) {  
+                return false;  
+            }
+        } else {  
+            std::filesystem::remove(tmp);  
+        }  
+        return removed;
+    }
 protected:
     duckdb::DuckDB db;
     duckdb::Connection conn;
     
-    BasicGrapharFixture(): db(nullptr), conn(db), tmp_folder(std::filesystem::temp_directory_path() / "duckdb_graphar/data/") {};
+    BasicGrapharFixture(): db(nullptr), conn(db), tmp_folder(std::filesystem::temp_directory_path() / "duckdb_graphar/data/") {conn.Query("PRAGMA enable_logging; SET logging_level = 'TRACE'; SET graphar_time_logging=true;");};
     ~BasicGrapharFixture(){
         for (const auto& graph_folder : graph_folders){
             std::filesystem::remove_all(graph_folder);
@@ -239,6 +268,7 @@ protected:
         REQUIRE(!graph_info->Dump().has_error());
         REQUIRE(graph_info->Save(graph_path).ok());
 
+        REQUIRE(RemovePrefix(graph_path));
 
         // vertices_list
         for (auto ind_v = 0; ind_v < vertices_list.size(); ++ind_v){
