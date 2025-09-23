@@ -173,17 +173,17 @@ jobs:
           cp build/_deps/duckdb-build/extension/duckdb_graphar/duckdb_graphar.duckdb_extension upload-artifacts/
 
           if [ "${{ matrix.os }}" == "macos-14" ]; then
-            cp ./build/_deps/arrow-install/lib/libarrow.1900.dylib upload-artifacts/
-            cp ./build/_deps/arrow-install/lib/libarrow_dataset.1900.dylib upload-artifacts/
-            cp ./build/_deps/arrow-install/lib/libarrow_acero.1900.dylib upload-artifacts/
-            cp ./build/_deps/arrow-install/lib/libparquet.1900.dylib upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libarrow.1700.dylib upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libarrow_dataset.1700.dylib upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libarrow_acero.1700.dylib upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libparquet.1700.dylib upload-artifacts/
 
             cp ./build/_deps/graphar-install/lib/libgraphar.dylib upload-artifacts/
           else
-            cp ./build/_deps/arrow-install/lib/libarrow.so.1900 upload-artifacts/
-            cp ./build/_deps/arrow-install/lib/libarrow_dataset.so.1900 upload-artifacts/
-            cp ./build/_deps/arrow-install/lib/libarrow_acero.so.1900 upload-artifacts/
-            cp ./build/_deps/arrow-install/lib/libparquet.so.1900 upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libarrow.so.1700 upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libarrow_dataset.so.1700 upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libarrow_acero.so.1700 upload-artifacts/
+            cp ./build/_deps/arrow-install/lib/libparquet.so.1700 upload-artifacts/
 
             cp ./build/_deps/graphar-install/lib/libgraphar.so upload-artifacts/
           fi
@@ -205,3 +205,5 @@ jobs:
         with:
           name: duckdb-graphar-${{ matrix.os }}
           path: upload-artifacts
+          if-no-files-found: error
+
