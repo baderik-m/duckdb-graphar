@@ -16,13 +16,14 @@ using namespace graphar;
 
 
 TEST_CASE("EdgesVertex GetFunction basic test", "[edges_vertex]") {
-    TableFunction edges_vertex = EdgesVertex::GetFunction();
-
+    TableFunction edges_vertex;
+    REQUIRE_NOTHROW(edges_vertex = EdgesVertex::GetFunction());
+    
     REQUIRE(edges_vertex.name == "edges_vertex");
     REQUIRE(edges_vertex.arguments.size() == 1);
     REQUIRE(edges_vertex.named_parameters.size() == 0);
-    REQUIRE(edges_vertex.filter_pushdown == true);
-    REQUIRE(edges_vertex.projection_pushdown == false);
+    CHECK(edges_vertex.filter_pushdown == true);
+    CHECK(edges_vertex.projection_pushdown == false);
 }
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "EdgesVertex Bind and Execute functions vertex without properties", "[edges_vertex]", FILE_TYPES_FOR_TEST) {

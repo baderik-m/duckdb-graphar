@@ -15,13 +15,14 @@ using namespace graphar;
 #define TestFixture TableFunctionsFixture<TestType>
 
 TEST_CASE("ReadVertices GetFunction basic test", "[read_vertices]") {
-    TableFunction read_vertices = ReadVertices::GetFunction();
-
+    TableFunction read_vertices;
+    REQUIRE_NOTHROW(read_vertices = ReadVertices::GetFunction());
+    
     REQUIRE(read_vertices.name == "read_vertices");
     REQUIRE(read_vertices.arguments.size() == 1);
     REQUIRE(read_vertices.named_parameters.size() == 1);
-    REQUIRE(read_vertices.filter_pushdown == true);
-    REQUIRE(read_vertices.projection_pushdown == true);
+    CHECK(read_vertices.filter_pushdown == true);
+    CHECK(read_vertices.projection_pushdown == true);
 
     REQUIRE(read_vertices.named_parameters.find("type") != read_vertices.named_parameters.end());
 }

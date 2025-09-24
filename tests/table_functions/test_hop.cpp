@@ -15,13 +15,14 @@ using namespace graphar;
 #define TestFixture TableFunctionsFixture<TestType>
 
 TEST_CASE("OneMoreHop GetFunction basic test", "[one_more_hop]") {
-    TableFunction one_more_hop = OneMoreHop::GetFunction();
-
+    TableFunction one_more_hop;
+    REQUIRE_NOTHROW(one_more_hop = OneMoreHop::GetFunction());
+    
     REQUIRE(one_more_hop.name == "one_more_hop");
     REQUIRE(one_more_hop.arguments.size() == 1);
     REQUIRE(one_more_hop.named_parameters.size() == 1);
-    REQUIRE(one_more_hop.filter_pushdown == false);
-    REQUIRE(one_more_hop.projection_pushdown == true);
+    CHECK(one_more_hop.filter_pushdown == false);
+    CHECK(one_more_hop.projection_pushdown == true);
 
     REQUIRE(one_more_hop.named_parameters.find("vid") != one_more_hop.named_parameters.end());
 }
@@ -130,13 +131,14 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute fun
 
 
 TEST_CASE("TwoHop GetFunction basic test", "[two_hop]") {
-    TableFunction two_hop = TwoHop::GetFunction();
+    TableFunction two_hop;
+    REQUIRE_NOTHROW(two_hop = TwoHop::GetFunction());
 
     REQUIRE(two_hop.name == "two_hop");
     REQUIRE(two_hop.arguments.size() == 1);
     REQUIRE(two_hop.named_parameters.size() == 1);
-    REQUIRE(two_hop.filter_pushdown == false);
-    REQUIRE(two_hop.projection_pushdown == true);
+    CHECK(two_hop.filter_pushdown == false);
+    CHECK(two_hop.projection_pushdown == true);
 
     REQUIRE(two_hop.named_parameters.find("vid") != two_hop.named_parameters.end());
 }

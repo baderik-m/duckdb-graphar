@@ -14,13 +14,14 @@ using namespace graphar;
 #define TestFixture TableFunctionsFixture<TestType>
 
 TEST_CASE("ReadEdges GetFunction basic test", "[read_edges]") {
-    TableFunction read_edges = ReadEdges::GetFunction();
+    TableFunction read_edges;
+    REQUIRE_NOTHROW(read_edges = ReadEdges::GetFunction());
     
     REQUIRE(read_edges.name == "read_edges");
     REQUIRE(read_edges.arguments.size() == 1);
     REQUIRE(read_edges.named_parameters.size() == 3);
-    REQUIRE(read_edges.filter_pushdown == true);
-    REQUIRE(read_edges.projection_pushdown == true);
+    CHECK(read_edges.filter_pushdown == true);
+    CHECK(read_edges.projection_pushdown == true);
     
     REQUIRE(read_edges.named_parameters.find("src") != read_edges.named_parameters.end());
     REQUIRE(read_edges.named_parameters.find("dst") != read_edges.named_parameters.end());
