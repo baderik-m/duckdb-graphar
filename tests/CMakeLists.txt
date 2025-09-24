@@ -18,6 +18,8 @@ include_directories(${EXTENSION_ROOT_DIR}/tests/fixture)
 # unittest
 # add_subdirectory(storage)
 add_subdirectory(table_functions)
+add_subdirectory(scalar_functions)
+
 
 add_executable(unittest_graphar ${ALL_OBJECT_FILES})
 message("${ALL_OBJECT_FILES}")

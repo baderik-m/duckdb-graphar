@@ -1,97 +1,25 @@
-#include <memory>
-#include <string>
-#include <vector>
-#include "duckdb/common/file_system.hpp"
-
+#define CATCH_CONFIG_MAIN
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
 
-#include <graphar/api/high_level_writer.h>
-#include <graphar/graph_info.h>
-#include <graphar/status.h>
+#include <filesystem>
+#include <iostream>
+// #include "duckdb/planner/expression.hpp"
+#include "duckdb/execution/expression_executor_state.hpp"
+#include "duckdb/execution/expression_executor.hpp"
+#include "duckdb/planner/expression/bound_function_expression.hpp"
+#include "duckdb/planner/expression/bound_constant_expression.hpp"
+#include "duckdb/parser/expression/constant_expression.hpp"
 
-#include "duckdb_graphar_extension.hpp"
+#include "scalar_functions_fixture.hpp"
 #include "functions/scalar/bfs.hpp"
 
 using namespace duckdb;
-struct Edge {
-    int64_t src;
-    int64_t dst;
-};
+using namespace graphar;
 
-#define ADJLIST_TYPE graphar::AdjListType::ordered_by_source
-
-std::string createAndSaveGraphAr(const std::string& graph_name, const std::vector<int64_t>& vertices,
-                          const std::vector<Edge>& edges, const std::string& output_path = "test/data/",
-                          int64_t vertex_chunk_size = 1024, int64_t edge_chunk_size = 1024 * 1024
-                        ) {
-    std::string save_path = output_path + "/" + graph_name + "/";
-    auto version = graphar::InfoVersion::Parse("gar/v1").value();
-
-    std::string type = "Person", vertex_prefix = "vertex/Person/";
-
-    auto vertex_info = graphar::CreateVertexInfo(type, vertex_chunk_size, {}, {},
-                                                vertex_prefix, version);
-
-    assert(!vertex_info->Dump().has_error());
-    assert(vertex_info->Save(save_path + "Person.vertex.yml").ok());
-
-    /*------------------construct edge info------------------*/
-    std::string src_type = "Person", edge_type = "knows", dst_type = "Person",
-                edge_prefix = "edge/Person_knows_Person/";
-    bool directed = false;
-
-    auto adjacent_lists = {
-        graphar::CreateAdjacentList(ADJLIST_TYPE, graphar::FileType::PARQUET)};
-
-    auto edge_info = graphar::CreateEdgeInfo(
-        src_type, edge_type, dst_type, edge_chunk_size, vertex_chunk_size,
-        vertex_chunk_size, directed, adjacent_lists, {}, edge_prefix, version);
-
-    assert(!edge_info->Dump().has_error());
-    assert(edge_info->Save(save_path + "Person_knows_Person.edge.yml").ok());
-
-    /*------------------construct graph info------------------*/
-    auto graph_info = graphar::CreateGraphInfo(
-        graph_name, {vertex_info}, {edge_info}, {}, save_path, version);
-
-    assert(!graph_info->Dump().has_error());
-    std::string graph_path = save_path + graph_name + ".graph.yml";
-    assert(graph_info->Save(graph_path).ok());
-
-    /*------------------construct vertices------------------*/
-    graphar::IdType start_index = 0;
-    auto v_builder = graphar::builder::VerticesBuilder::Make(
-                        vertex_info, save_path, start_index)
-                        .value();
-
-    for (int i = 0; i < vertices.size(); i++) {
-        graphar::builder::Vertex v;
-        assert(v_builder->AddVertex(v).ok());
-    }
-
-    assert(v_builder->GetNum() == vertices.size());
-    
-    assert(v_builder->Dump().ok());
-
-    v_builder->Clear();
-
-    /*------------------construct edges------------------*/
-    auto e_builder = graphar::builder::EdgesBuilder::Make(
-                        edge_info, save_path, ADJLIST_TYPE, vertices.size())
-                        .value();
-
-    for (const Edge& edge : edges){
-        graphar::builder::Edge e(edge.src, edge.dst);
-        assert(e_builder->AddEdge(e).ok());
-    }
-    assert(e_builder->Dump().ok());
-
-    e_builder->Clear();
-    return graph_path;
-}
-
-
+#define TestFixture ScalarFunctionsFixture<TestType>
+/*
 std::string GetTrialGraph() {
     std::string path = "test/data/";
     std::string graph_name = "trial_graph";
@@ -126,7 +54,161 @@ std::string GetLongGraph() {
     }
     return createAndSaveGraphAr(graph_name, vertices, edges, path);
 }
+*/
 
+
+TEST_CASE("BFS GetFunction basic test", "[bfs]") {
+    SECTION("bfs_exist") {
+        ScalarFunction bfs_exist_path = Bfs::GetFunctionExists();
+        
+        REQUIRE(bfs_exist_path.name == "bfs_exist");
+        REQUIRE(bfs_exist_path.arguments.size() == 3);
+        REQUIRE(bfs_exist_path.arguments == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::VARCHAR}));
+        REQUIRE(bfs_exist_path.return_type == LogicalType::BOOLEAN);
+    }
+
+    SECTION("bfs_length") {
+        ScalarFunction bfs_length_path = Bfs::GetFunctionLength();
+
+        REQUIRE(bfs_length_path.name == "bfs_length");
+        REQUIRE(bfs_length_path.arguments.size() == 3);
+        REQUIRE(bfs_length_path.arguments == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::VARCHAR}));
+        REQUIRE(bfs_length_path.return_type == LogicalType::BIGINT);
+    }
+}
+
+
+
+TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function vertex", "[bfs]", FILE_TYPES_FOR_TEST) {
+    DataChunk args;
+    args.Initialize(*TestFixture::conn.context, {LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::VARCHAR}, 1);
+    args.SetCardinality(1);
+
+    SECTION("bfs_exist") {
+        ScalarFunction bfs_exist_path = Bfs::GetFunctionExists();        
+
+        INFO("Mocking state");
+        duckdb::BoundFunctionExpression bound_expr(
+            LogicalType::BOOLEAN,
+            bfs_exist_path,
+            {},
+            nullptr,
+            false
+        );
+        duckdb::ExpressionExecutorState executor_state{};
+        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
+
+        executor_state.executor = &executor;
+        duckdb::ExpressionState state(bound_expr, executor_state);
+
+        duckdb::Vector result(duckdb::LogicalType::BOOLEAN);
+
+        SECTION("1 hop"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(1));
+            args.SetValue(1, 0, Value::BIGINT(2));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            bfs_exist_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<bool>(result);
+            REQUIRE(result_data[0] == true);  
+            INFO("Finish execute test");
+        }
+        SECTION(""){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(1));
+            args.SetValue(1, 0, Value::BIGINT(4));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            bfs_exist_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<bool>(result);
+            REQUIRE(result_data[0] == true);  
+            INFO("Finish execute test");
+        }
+
+        SECTION("2 hop"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(1));
+            args.SetValue(1, 0, Value::BIGINT(4));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            bfs_exist_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<bool>(result);
+            REQUIRE(result_data[0] == true);  
+            INFO("Finish execute test");
+        }
+
+        SECTION("Fake vertex"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(0));
+            args.SetValue(1, 0, Value::BIGINT(2));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            
+            bfs_exist_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<bool>(result);
+            REQUIRE(result_data[0] == false);  
+            INFO("Finish execute test");
+        }
+
+    }
+    SECTION("bfs_length"){
+        ScalarFunction bfs_length_path = Bfs::GetFunctionLength(); 
+        
+        INFO("Mocking state");
+        duckdb::BoundFunctionExpression bound_expr(
+            LogicalType::BIGINT,
+            bfs_length_path,
+            {},
+            nullptr,
+            false
+        );
+        duckdb::ExpressionExecutorState executor_state{};
+        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
+
+        executor_state.executor = &executor;
+        duckdb::ExpressionState state(bound_expr, executor_state);
+
+        duckdb::Vector result(duckdb::LogicalType::BIGINT);
+
+        SECTION("1 hop"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(1));
+            args.SetValue(1, 0, Value::BIGINT(2));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            bfs_length_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<long long>(result);
+            REQUIRE(result_data[0] == 1);  
+            INFO("Finish execute test");
+        }
+
+        SECTION("2 hop"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(1));
+            args.SetValue(1, 0, Value::BIGINT(4));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            bfs_length_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<long long>(result);
+            REQUIRE(result_data[0] == 2);  
+            INFO("Finish execute test");
+        }
+    }
+}
+/*
 TEST_CASE("BFS Basic Functionality", "[bfs]") {
     DuckDB db(nullptr);
     Connection con(db);
@@ -188,3 +270,4 @@ TEST_CASE("BFS Performance", "[bfs][stress]") {
         };
     }
 }
+*/
