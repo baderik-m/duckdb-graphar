@@ -42,7 +42,7 @@ std::string GetLongGraph() {
     std::vector<int64_t> vertices(530);
     std::vector<Edge> edges(556);
     vertices[0] = 0;
-    vertices[539]= 539;
+    vertices[529]= 529;
     for (int i = 1; i < 30; ++i) {
         edges[2*(i-1)] = {0, i };
         edges[2*(i-1)+1] = {30, i};
@@ -78,8 +78,7 @@ TEST_CASE("BFS GetFunction basic test", "[bfs]") {
 }
 
 
-
-TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function vertex", "[bfs]", FILE_TYPES_FOR_TEST) {
+TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for trial graph", "[bfs]", FILE_TYPES_FOR_TEST) {
     DataChunk args;
     args.Initialize(*TestFixture::conn.context, {LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::VARCHAR}, 1);
     args.SetCardinality(1);
@@ -116,17 +115,17 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function vertex",
             REQUIRE(result_data[0] == true);  
             INFO("Finish execute test");
         }
-        SECTION(""){
+        SECTION("Non-existent path"){
             INFO("Set args");
 
             args.SetValue(0, 0, Value::BIGINT(1));
-            args.SetValue(1, 0, Value::BIGINT(4));
+            args.SetValue(1, 0, Value::BIGINT(7));
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
             bfs_exist_path.function(args, state, result);
             auto result_data = FlatVector::GetData<bool>(result);
-            REQUIRE(result_data[0] == true);  
+            REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
         }
 
@@ -143,8 +142,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function vertex",
             REQUIRE(result_data[0] == true);  
             INFO("Finish execute test");
         }
-
-        SECTION("Fake vertex"){
+        SECTION("Non-existent vertex"){
             INFO("Set args");
 
             args.SetValue(0, 0, Value::BIGINT(0));
@@ -192,7 +190,19 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function vertex",
             REQUIRE(result_data[0] == 1);  
             INFO("Finish execute test");
         }
+        SECTION("Non-existent path"){
+            INFO("Set args");
 
+            args.SetValue(0, 0, Value::BIGINT(1));
+            args.SetValue(1, 0, Value::BIGINT(7));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            bfs_length_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<long long>(result);
+            REQUIRE(result_data[0] == -1);  
+            INFO("Finish execute test");
+        }
         SECTION("2 hop"){
             INFO("Set args");
 
@@ -206,8 +216,111 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function vertex",
             REQUIRE(result_data[0] == 2);  
             INFO("Finish execute test");
         }
+        SECTION("Non-existent vertex"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(0));
+            args.SetValue(1, 0, Value::BIGINT(2));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            
+            bfs_length_path.function(args, state, result);
+            auto result_data = FlatVector::GetData<long long>(result);
+            REQUIRE(result_data[0] == -1);  
+            INFO("Finish execute test");
+        }
     }
 }
+
+TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 hop", "[bfs]", FILE_TYPES_FOR_TEST) {
+    DataChunk args;
+    args.Initialize(*TestFixture::conn.context, {LogicalType::BIGINT, LogicalType::BIGINT, LogicalType::VARCHAR}, 1);
+    args.SetCardinality(1);
+    SECTION("bfs_exist") {
+        ScalarFunction bfs_exist_path = Bfs::GetFunctionExists();        
+
+        INFO("Mocking state");
+        duckdb::BoundFunctionExpression bound_expr(
+            LogicalType::BOOLEAN,
+            bfs_exist_path,
+            {},
+            nullptr,
+            false
+        );
+        duckdb::ExpressionExecutorState executor_state{};
+        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
+
+        executor_state.executor = &executor;
+        duckdb::ExpressionState state(bound_expr, executor_state);
+
+        duckdb::Vector result(duckdb::LogicalType::BOOLEAN);
+        
+        SECTION("Long Path 500 hop"){
+            args.SetValue(0, 0, Value::BIGINT(0));
+            args.SetValue(1, 0, Value::BIGINT(528));
+            args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            BENCHMARK("Exists path") {
+                bfs_exist_path.function(args, state, result);
+                auto result_data = FlatVector::GetData<bool>(result);
+                return (result_data[0] == true);  
+            };
+        }
+        SECTION("Long Path 500 hop"){
+            args.SetValue(0, 0, Value::BIGINT(0));
+            args.SetValue(1, 0, Value::BIGINT(529));
+            args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            BENCHMARK("No Path") {
+                bfs_exist_path.function(args, state, result);
+                auto result_data = FlatVector::GetData<bool>(result);
+                return (result_data[0] == false);  
+            };
+        }
+    }
+
+    SECTION("bfs_length"){
+        ScalarFunction bfs_length_path = Bfs::GetFunctionLength(); 
+        
+        INFO("Mocking state");
+        duckdb::BoundFunctionExpression bound_expr(
+            LogicalType::BIGINT,
+            bfs_length_path,
+            {},
+            nullptr,
+            false
+        );
+        duckdb::ExpressionExecutorState executor_state{};
+        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
+
+        executor_state.executor = &executor;
+        duckdb::ExpressionState state(bound_expr, executor_state);
+
+        duckdb::Vector result(duckdb::LogicalType::BIGINT);
+
+        SECTION("Long Path 500 hop"){
+            args.SetValue(0, 0, Value::BIGINT(0));
+            args.SetValue(1, 0, Value::BIGINT(528));
+            args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            BENCHMARK("Exists path") {
+                bfs_length_path.function(args, state, result);
+                auto result_data = FlatVector::GetData<long long>(result);
+                return (result_data[0] == 500);  
+            };
+        }
+        SECTION("Long Path 500 hop"){
+            args.SetValue(0, 0, Value::BIGINT(0));
+            args.SetValue(1, 0, Value::BIGINT(529));
+            args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            BENCHMARK("No Path") {
+                bfs_length_path.function(args, state, result);
+                auto result_data = FlatVector::GetData<long long>(result);
+                return (result_data[0] == -1);  
+            };
+        }
+    }
+}
+
+
 /*
 TEST_CASE("BFS Basic Functionality", "[bfs]") {
     DuckDB db(nullptr);
