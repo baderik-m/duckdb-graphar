@@ -1,12 +1,6 @@
 #pragma once
 #include "basic_graphar_fixture.hpp"
-#include "duckdb/parser/tableref/table_function_ref.hpp"
-// class TestExpressionState : public ExpressionState {
-//     public:
-//         TestExpressionState(ExecutionContext& context) : ExpressionState(nullptr, context) {
-//             expr = make_uniq<ParsedExpression>(ExpressionType::VALUE_CONSTANT, LogicalType::BOOLEAN);
-//         }
-//     } test_state(state);
+
 
 template <typename FileTypeTag> 
 class ScalarFunctionsFixture: public BasicGrapharFixture<FileTypeTag> {

@@ -5,12 +5,9 @@
 
 #include <filesystem>
 #include <iostream>
-// #include "duckdb/planner/expression.hpp"
-#include "duckdb/execution/expression_executor_state.hpp"
-#include "duckdb/execution/expression_executor.hpp"
+
 #include "duckdb/planner/expression/bound_function_expression.hpp"
-#include "duckdb/planner/expression/bound_constant_expression.hpp"
-#include "duckdb/parser/expression/constant_expression.hpp"
+#include "duckdb/execution/expression_executor.hpp"
 
 #include "scalar_functions_fixture.hpp"
 #include "functions/scalar/bfs.hpp"
@@ -19,42 +16,6 @@ using namespace duckdb;
 using namespace graphar;
 
 #define TestFixture ScalarFunctionsFixture<TestType>
-/*
-std::string GetTrialGraph() {
-    std::string path = "test/data/";
-    std::string graph_name = "trial_graph";
-    std::string graph_path = path+graph_name+"/"+graph_name+".graph.yml";
-
-    auto graph_info = graphar::GraphInfo::Load(graph_path).value_or(nullptr);
-    if (graph_info != nullptr){ return graph_path; }
-    return createAndSaveGraphAr(graph_name, {0, 1, 2, 3, 4}, {{0,1}, {1,3}, {2, 0}, {2, 1}}, path);
-
-}
-
-std::string GetLongGraph() {
-    std::string path = "test/data/";
-    std::string graph_name = "long_graph";
-    std::string graph_path = path+graph_name+"/"+graph_name+".graph.yml";
-    
-    auto graph_info = graphar::GraphInfo::Load(graph_path).value_or(nullptr);
-    if (graph_info != nullptr){ return path; }
-    
-    std::vector<int64_t> vertices(530);
-    std::vector<Edge> edges(556);
-    vertices[0] = 0;
-    vertices[529]= 529;
-    for (int i = 1; i < 30; ++i) {
-        edges[2*(i-1)] = {0, i };
-        edges[2*(i-1)+1] = {30, i};
-        vertices[i] = i;
-    }
-    for (int i = 31; i < 528; ++i) {
-        edges[27 + i] = {i-1, i };
-        vertices[i] = i;
-    }
-    return createAndSaveGraphAr(graph_name, vertices, edges, path);
-}
-*/
 
 
 TEST_CASE("BFS GetFunction basic test", "[bfs]") {
@@ -319,68 +280,3 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 
         }
     }
 }
-
-
-/*
-TEST_CASE("BFS Basic Functionality", "[bfs]") {
-    DuckDB db(nullptr);
-    Connection con(db);
-    
-    Bfs::Register(*db.instance);
-    
-    std::string graph_path = GetTrialGraph();
-    
-    SECTION("BFS Length - Direct Connection") {
-        auto result = con.Query("SELECT bfs_length(0, 1, '" + graph_path + "')");
-        
-        REQUIRE(result->GetValue(0, 0).GetValue<int64_t>() == 1);
-    }
-    
-    SECTION("BFS Length - Two Hops") {
-        auto result = con.Query("SELECT bfs_length(0, 3, '" + graph_path + "')");
-        
-        REQUIRE(result->GetValue(0, 0).GetValue<int64_t>() == 2);
-    }
-    
-    SECTION("BFS Length - No Path") {
-        auto result = con.Query("SELECT bfs_length(4, 0, '" + graph_path + "')");
-        
-        REQUIRE(result->GetValue(0, 0).GetValue<int64_t>() == -1);
-    }
-    
-    SECTION("BFS Exists - Direct Connection") {
-        auto result = con.Query("SELECT bfs_exist(0, 1, '" + graph_path + "')");
-        
-        REQUIRE(result->GetValue(0, 0).GetValue<bool>());
-    }
-    
-    SECTION("BFS Exists - No Path") {
-        auto result = con.Query("SELECT bfs_exist(4, 0, '" + graph_path + "')");
-        
-        REQUIRE(!result->GetValue(0, 0).GetValue<bool>());
-    }
-}
-
-TEST_CASE("BFS Performance", "[bfs][stress]") {
-    DuckDB db(nullptr);
-    Connection con(db);
-    
-    Bfs::Register(*db.instance);
-    
-    std::string graph_path = GetLongGraph();
-    
-    SECTION("BFS Long Path Stress Test (500 hops)") {
-        std::string long_graph_path = "test_long_graph";
-        
-        BENCHMARK("BFS Long Path") {
-            auto result = con.Query("SELECT bfs_length(0, 527, '" + long_graph_path + "')");
-            return (result->GetValue(0, 0).GetValue<int64_t>() == 500);
-        };
-
-        BENCHMARK("BFS No Path") {
-            auto result = con.Query("SELECT bfs_length(0, 528, '" + long_graph_path + "')");
-            return (result->GetValue(0, 0).GetValue<int64_t>()==-1);
-        };
-    }
-}
-*/
