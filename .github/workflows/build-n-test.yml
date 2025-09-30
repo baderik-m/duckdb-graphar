@@ -160,10 +160,14 @@ jobs:
             echo "version: gar/v1"
           } > "$GRAPH_INFO_FILE"
 
-      - name: Run Tests
+      - name: Run Tests DuckDB
         if: matrix.os == 'ubuntu-22.04'
         run: |
-          build/_deps/duckdb-build/test/unittest "[graphar]" --reporter console || exit 1
+          build/_deps/duckdb-build/test/unittest "[graphar]" --reporter console  || exit 1
+      
+      - name: Run Tests Extension
+        run: |
+          build/_deps/duckdb-build/extension/duckdb_graphar/tests/unittest_graphar  --reporter console  || exit 1
 
       - name: Prepare Artifacts for Upload
         run: |
