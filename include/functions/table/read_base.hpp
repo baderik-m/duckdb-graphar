@@ -9,7 +9,7 @@
 #include <duckdb/common/named_parameter_map.hpp>
 #include <duckdb/function/table/arrow.hpp>
 #include <duckdb/function/table_function.hpp>
-#include <duckdb/main/extension_util.hpp>
+#include <duckdb/main/extension/extension_loader.hpp>
 
 #include <graphar/api/arrow_reader.h>
 #include <graphar/api/high_level_reader.h>
@@ -383,21 +383,60 @@ public:
         return arrow::Table::Make(std::move(combined_schema), std::move(all_columns), num_rows);
     }
 
-    static void ConvertArrowTableToDataChunk(const std::shared_ptr<arrow::Table> table, DataChunk& output,
-                                             vector<column_t>& column_ids) {
-        DUCKDB_GRAPHAR_LOG_TRACE("ConvertArrowTableToDataChunk started");
-        const auto num_rows = table->num_rows();
-        for (idx_t column_ids_i = 0; column_ids_i < column_ids.size(); column_ids_i++) {
-            const auto column_i = column_ids[column_ids_i];
-            for (idx_t row_i = 0; row_i < num_rows; row_i++) {
-                auto maybe_value = table->column(column_i)->GetScalar(row_i);
-                if (!maybe_value.ok()) {
-                    throw std::runtime_error("Failed to get value from table: " + maybe_value.status().ToString());
+    static void ConvertArrowTableToDataChunk(const arrow::Table& table, DataChunk& output,
+                                             const vector<column_t>& column_ids, ClientContext& context) {
+        auto schema = table.schema();
+
+        ArrowSchema c_schema;
+        auto export_schema_status = arrow::ExportSchema(*schema, &c_schema);
+        if (!export_schema_status.ok()) {
+            throw std::runtime_error("Failed to export schema: " + export_schema_status.message());
+        }
+
+        ArrowTableSchema arrow_table_schema;
+        ArrowTableFunction::PopulateArrowTableSchema(context.db->config, arrow_table_schema, c_schema);
+
+        const auto num_rows = table.num_rows();
+        output.SetCapacity(num_rows);
+        output.SetCardinality(num_rows);
+        for (idx_t col_idx = 0; col_idx < column_ids.size(); col_idx++) {
+            auto& arrow_type = *arrow_table_schema.GetColumns().at(column_ids[col_idx]);
+            if (arrow_type.GetDuckType().id() == LogicalTypeId::VARCHAR) {
+                for (idx_t row_i = 0; row_i < num_rows; row_i++) {
+                    auto maybe_value = table.column(column_ids[col_idx])->GetScalar(row_i);
+                    if (!maybe_value.ok()) {
+                        throw std::runtime_error("Failed to get value from table: " + maybe_value.status().ToString());
+                    }
+                    auto value = maybe_value.ValueUnsafe();
+                    auto duckdb_value = GraphArFunctions::ArrowScalar2DuckValue(value);
+                    output.SetValue(col_idx, row_i, duckdb_value);
                 }
-                auto value = maybe_value.ValueOrDie();
-                auto duckdb_value = GraphArFunctions::ArrowScalar2DuckValue(value);
-                output.SetValue(column_ids_i, row_i, duckdb_value);
+                continue;
             }
+
+            auto arrow_column = table.column(column_ids[col_idx]);
+
+            auto flatten_result = arrow::Concatenate(arrow_column->chunks());
+            if (!flatten_result.ok()) {
+                throw std::runtime_error("Failed to flatten Arrow column");
+            }
+            auto arrow_array = flatten_result.ValueOrDie();
+
+            ArrowArray c_array;
+            auto export_array_status = arrow::ExportArray(*arrow_array, &c_array);
+            if (!export_array_status.ok()) {
+                throw std::runtime_error("Failed to export Arrow array: " + export_array_status.message());
+            }
+
+            ArrowArrayScanState array_state(context);
+            array_state.owned_data = make_shared_ptr<ArrowArrayWrapper>();
+            array_state.owned_data->arrow_array = std::move(c_array);
+
+            ArrowToDuckDBConversion::SetValidityMask(output.data[col_idx], array_state.owned_data->arrow_array, 0,
+                                                     output.size(), 0, -1);
+
+            ArrowToDuckDBConversion::ColumnArrowToDuckDB(output.data[col_idx], array_state.owned_data->arrow_array, 0,
+                                                         array_state, output.size(), arrow_type);
         }
     }
 
@@ -440,7 +479,7 @@ public:
                 throw std::runtime_error("Failed to concatenate tables: " + maybe_table.status().ToString());
             }
             auto table = maybe_table.ValueOrDie();
-            ConvertArrowTableToDataChunk(table, output, gstate.column_ids);
+            ConvertArrowTableToDataChunk(*table, output, gstate.column_ids, context);
             for (idx_t i = 0; i < gstate.tables.size(); i++) {
                 gstate.indices[i] += num_rows;
             }
@@ -457,7 +496,7 @@ public:
         gstate.chunk_count++;
     }
 
-    static void Register(DatabaseInstance& db) { ExtensionUtil::RegisterFunction(db, ReadFinal::GetFunction()); }
+    static void Register(ExtensionLoader& loader) { loader.RegisterFunction(ReadFinal::GetFunction()); }
     static TableFunction GetFunction() { return ReadFinal::GetFunction(); }
     static TableFunction GetScanFunction() { return ReadFinal::GetScanFunction(); }
 };

@@ -76,4 +76,3 @@ if(BUILD_TESTS)
     log_stage("Building tests of extension...")
     add_subdirectory(${EXTENSION_ROOT_DIR}/tests tests)
 endif()
-
