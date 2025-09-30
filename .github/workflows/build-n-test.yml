@@ -101,7 +101,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DLOAD_TESTS=ON ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DLOAD_TESTS=ON -BUILD_TESTS=ON ..
 
       - name: Build
         run: |

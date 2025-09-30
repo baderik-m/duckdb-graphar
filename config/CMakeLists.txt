@@ -26,7 +26,6 @@ set(EXTENSION_INCLUDES
     $<BUILD_INTERFACE:${arrow_SOURCE_DIR}/cpp/src>
     $<BUILD_INTERFACE:${ARROW_INSTALL_DIR}/include>
 )
-# message("arrow path $<BUILD_INTERFACE:${arrow_SOURCE_DIR}/cpp/src>")
 
 target_include_directories(duckdb_graphar_extension PUBLIC ${EXTENSION_INCLUDES} $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_include_directories(duckdb_graphar_loadable_extension PUBLIC ${EXTENSION_INCLUDES} $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
