@@ -24,12 +24,20 @@ struct PropertySchema{
     std::string data_type;
     bool is_nullable;
     bool is_primary;
-};
 
+    PropertySchema(std::string name, std::string data_type, bool is_nullable, bool is_primary)
+        : name(name), data_type(data_type), is_nullable(is_nullable), is_primary(is_primary) {}
+};
 struct EdgeData {
     int64_t src;
     int64_t dst;
     std::unordered_map<std::string, PropertyValue> properties;
+
+    EdgeData(int64_t src, int64_t dst, std::unordered_map<std::string, PropertyValue> properties)
+        : src(src), dst(dst), properties(properties) {}
+    EdgeData(int64_t src, int64_t dst)
+        : src(src), dst(dst) {}
+    EdgeData() = default;
 };
 struct EdgesSchema {
     std::string src_type;
@@ -40,16 +48,28 @@ struct EdgesSchema {
     std::vector<PropertySchema> properties;
     std::vector<EdgeData> edges;
     graphar::IdType num_vertices;
+
+    EdgesSchema(std::string src_type, std::string type, std::string dst_type, graphar::IdType chunk_size, bool directed, std::vector<PropertySchema> properties, std::vector<EdgeData> edges, graphar::IdType num_vertices)
+        : src_type(src_type), type(type), dst_type(dst_type), chunk_size(chunk_size), directed(directed), properties(properties), edges(edges), num_vertices(num_vertices) {}
 };
 struct VertexData {
     int64_t ind;
     std::unordered_map<std::string, PropertyValue> properties;
+
+    VertexData(int64_t ind, std::unordered_map<std::string, PropertyValue> properties)
+        : ind(ind), properties(properties) {}
+    VertexData(int64_t ind)
+        : ind(ind) {}
+    VertexData() = default;
 };
 struct VerticesSchema {
     std::string type;
     graphar::IdType chunk_size;
     std::vector<PropertySchema> properties;
     std::vector<VertexData> vertices;
+
+    VerticesSchema(std::string type, graphar::IdType chunk_size, std::vector<PropertySchema> properties, std::vector<VertexData> vertices)
+        : type(type), chunk_size(chunk_size), properties(properties), vertices(vertices) {}
 };
 
 
@@ -118,6 +138,16 @@ struct FileTypeOrc {};
 struct FileTypeJson {};
 
 #define FILE_TYPES_FOR_TEST FileTypeParquet
+
+namespace {
+    constexpr std::string_view GraphVersion = "gar/v1";
+    constexpr std::string_view VertexPathPrefix = "vertex/";
+    constexpr std::string_view EdgePathPrefix = "edge/";
+    constexpr std::string_view PrefixToRemove = "prefix:";
+    constexpr std::string GraphFileExtension = ".graph.yaml";
+
+}
+
 template <typename FileTypeTag> 
 class BasicGrapharFixture { 
 private:
@@ -145,32 +175,47 @@ private:
             throw std::runtime_error("Failed to create test data directory: " + tmp_folder.string());
         }
     };
-    bool RemovePrefix(const std::string& path) const{
-        std::string needle = "prefix:";    
-        const std::string tmp = path + ".tmp";  
-        std::ifstream in(path);  
-        std::ofstream out(tmp, std::ios::trunc);  
-        std::string line;  
+    bool RemovePrefix(const std::string& path) const{        
+        struct Guard {
+            std::string tmp_path;
+            bool cleanup = false;
+
+            Guard(const std::string& path) : tmp_path(path + ".tmp") {}
+            ~Guard() {
+                if (cleanup) std::filesystem::remove(tmp_path);
+            }
+        } guard{path}; 
+        
         bool removed = false;  
-        while (std::getline(in, line)) {  
-            if (line.find(needle) == std::string::npos) {  
-                    out << line << '\n';  
-            } else {  
-                removed = true;  
-            }  
-        }  
-        in.close();  
-        out.close();  
+        
+        {
+            std::ifstream in(path);
+            if (!in) return false;
+
+            std::ofstream out(guard.tmp_path, std::ios::trunc);
+            if (!out) return false;
+            
+            guard.cleanup = true;
+
+            std::string line;
+            while (std::getline(in, line)) {
+                if (line.find(PrefixToRemove) == std::string::npos) {
+                    out << line << '\n';
+                } else {
+                    removed = true;
+                }
+            }
+        }
+
         if (removed) {
             std::error_code ec;  
-            std::filesystem::rename(tmp, path, ec);  
-            if (ec) {  
-                return false;  
+            std::filesystem::rename(guard.tmp_path, path, ec);  
+            if (!ec) {  
+                guard.cleanup = false;
+                return true;  
             }
-        } else {  
-            std::filesystem::remove(tmp);  
-        }  
-        return removed;
+        } 
+        return false;
     }
 protected:
     duckdb::DuckDB db;
@@ -195,8 +240,8 @@ protected:
         } while(std::filesystem::exists(graph_folder));
 
         graph_folders.push_back(graph_folder);
-        std::string output_path = graph_folder.string() + "/";
-        std::string graph_path = output_path + graph_name + ".graph.yaml";
+        const std::string output_path = graph_folder.string() + "/";
+        const std::string graph_path = output_path + graph_name + GraphFileExtension;
         INFO("Creating graph: " + graph_name + " in " + graph_path);
         auto graph_info = graphar::GraphInfo::Load(graph_path).value_or(nullptr);
         if (graph_info != nullptr) {

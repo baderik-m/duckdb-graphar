@@ -1,3 +1,4 @@
+log_stage("Declaring Catch2")
 include(FetchContent)
 FetchContent_Declare(
     Catch2
@@ -6,15 +7,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Catch2)
 get_property(catch_targets GLOBAL PROPERTY Catch2_IMPORTED_TARGETS)
-message(STATUS "Imported Catch2 targets: ${catch_targets}")
+log_done()
 
 # include_directories(${DUCKDB_INCLUDES})
-include_directories(${EXTENSION_INCLUDES})
+# include_directories(${EXTENSION_INCLUDES})
 get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2 INTERFACE_INCLUDE_DIRECTORIES)
-include_directories(${CATCH2_INCLUDE_DIRS})
+# include_directories(${CATCH2_INCLUDE_DIRS})
 # add_subdirectory(scalar_functions)
-message("fixtures: ${EXTENSION_ROOT_DIR}/tests/fixture")
-include_directories(${EXTENSION_ROOT_DIR}/tests/fixture)
+# include_directories(${EXTENSION_ROOT_DIR}/tests/fixture)
 # unittest
 # add_subdirectory(storage)
 add_subdirectory(table_functions)
@@ -22,6 +22,14 @@ add_subdirectory(scalar_functions)
 
 
 add_executable(unittest_graphar ${ALL_OBJECT_FILES})
+target_include_directories(unittest_graphar
+    PUBLIC
+        ${EXTENSION_INCLUDES}
+        ${CATCH2_INCLUDE_DIRS}
+        ${EXTENSION_ROOT_DIR}/tests/fixture
+)
+add_dependencies(unittest_graphar graphar::graphar_shared)
+
 message("${ALL_OBJECT_FILES}")
 target_link_libraries(unittest_graphar ${DUCKDB_EXTENSION_NAME})
 
