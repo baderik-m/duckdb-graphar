@@ -47,7 +47,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function invali
     REQUIRE_THROWS_AS(read_edges.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
 }
 
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind function basic test", "[read_edges]", FILE_TYPES_FOR_TEST) {
+TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute functions edge without property", "[read_edges]", FILE_TYPES_FOR_TEST) {
 
     INFO("Start mocking");    
     vector<Value> inputs({Value(TestFixture::path_trial_graph)});
@@ -129,58 +129,3 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute fun
     REQUIRE(res.ColumnCount() == 5);
     INFO("Finish execute test");
 }
-
-/*
-TEST_CASE("ReadEdges GetScanFunction basic test", "[read_edges]") {
-    TableFunction scan_edges = ReadEdges::GetScanFunction();
-    
-    REQUIRE(scan_edges.name == "");
-    REQUIRE(scan_edges.arguments.empty());
-    REQUIRE(scan_edges.filter_pushdown == true);
-    REQUIRE(scan_edges.projection_pushdown == true);
-}
-
-
-TEST_CASE("ReadEdges GetReader test", "[read_edges]") {
-    INFO("Creating db");
-    DuckDB db(nullptr);
-    Connection conn(db);
-
-    INFO("Start mocking");
-
-    vector<Value> inputs({Value(GRAPH_YML_PATH)});
-    named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
-    vector<LogicalType> input_table_types;
-    auto input = CreateMockBindInput(inputs, named_parameters, input_table_types);
-
-    vector<LogicalType> return_types;
-    vector<std::string> names;
-    INFO("Finish mocking");
-
-    auto bind_data_uniq = ReadEdges::GetFunction().bind(*conn.context, input, return_types, names);
-    auto& bind_data = bind_data_uniq->Cast<ReadBindData>();
-
-    ReadBaseGlobalTableFunctionState gstate;
-
-    SECTION("Тест без фильтра"){
-        auto reader = ReadEdges::GetReader(gstate, bind_data, 0, "", "", "");
-        REQUIRE(reader != nullptr);
-
-        auto result = GetChunk(*reader);
-        REQUIRE(!result.has_error());
-        auto table = result.value();
-        REQUIRE(table->num_rows() == 578006);
-        REQUIRE(table->num_columns() == 2);
-    }
-
-    SECTION("Тест с фильтром по SRC"){
-        auto reader = ReadEdges::GetReader(gstate, bind_data, 0, "0", SRC_GID_COLUMN, "int64");
-        REQUIRE(reader != nullptr);
-
-        auto result = GetChunk(*reader);
-        REQUIRE(!result.has_error());
-        auto table = result.value();
-        REQUIRE(table->num_rows() == 1); // только одно ребро выходящее из вершины 0
-    }
-}
-*/

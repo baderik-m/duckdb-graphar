@@ -71,7 +71,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            bfs_exist_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == true);  
             INFO("Finish execute test");
@@ -84,7 +84,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            bfs_exist_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
@@ -98,7 +98,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            bfs_exist_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == true);  
             INFO("Finish execute test");
@@ -112,7 +112,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             
-            bfs_exist_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
@@ -146,7 +146,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            bfs_length_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
             auto result_data = FlatVector::GetData<long long>(result);
             REQUIRE(result_data[0] == 1);  
             INFO("Finish execute test");
@@ -159,7 +159,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            bfs_length_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
             auto result_data = FlatVector::GetData<long long>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
@@ -172,7 +172,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            bfs_length_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
             auto result_data = FlatVector::GetData<long long>(result);
             REQUIRE(result_data[0] == 2);  
             INFO("Finish execute test");
@@ -186,7 +186,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             
-            bfs_length_path.function(args, state, result);
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
             auto result_data = FlatVector::GetData<long long>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
@@ -221,20 +221,21 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(528));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE(FlatVector::GetData<bool>(result)[0] == true);
             BENCHMARK("Exists path") {
                 bfs_exist_path.function(args, state, result);
-                auto result_data = FlatVector::GetData<bool>(result);
-                return (result_data[0] == true);  
+                return FlatVector::GetData<bool>(result)[0];  
             };
-        }
-        SECTION("Long Path 500 hop"){
+
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(529));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE(FlatVector::GetData<bool>(result)[0] == false);
             BENCHMARK("No Path") {
                 bfs_exist_path.function(args, state, result);
-                auto result_data = FlatVector::GetData<bool>(result);
-                return (result_data[0] == false);  
+                return FlatVector::GetData<bool>(result)[0];  
             };
         }
     }
@@ -262,20 +263,21 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(528));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE(FlatVector::GetData<long long>(result)[0] == 500);
             BENCHMARK("Exists path") {
                 bfs_length_path.function(args, state, result);
-                auto result_data = FlatVector::GetData<long long>(result);
-                return (result_data[0] == 500);  
+                return FlatVector::GetData<long long>(result)[0];  
             };
-        }
-        SECTION("Long Path 500 hop"){
+
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(529));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE(FlatVector::GetData<long long>(result)[0] == -1);
             BENCHMARK("No Path") {
                 bfs_length_path.function(args, state, result);
-                auto result_data = FlatVector::GetData<long long>(result);
-                return (result_data[0] == -1);  
+                return FlatVector::GetData<long long>(result)[0];  
             };
         }
     }
