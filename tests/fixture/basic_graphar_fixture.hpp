@@ -140,12 +140,13 @@ struct FileTypeJson {};
 #define FILE_TYPES_FOR_TEST FileTypeParquet
 
 namespace {
-    constexpr std::string_view GraphVersion = "gar/v1";
-    constexpr std::string_view VertexPathPrefix = "vertex/";
-    constexpr std::string_view EdgePathPrefix = "edge/";
+    const std::string GraphVersion = "gar/v1";
+    const std::string VertexPathPrefix = "vertex/";
+    const std::string EdgePathPrefix = "edge/";
     constexpr std::string_view PrefixToRemove = "prefix:";
-    constexpr std::string GraphFileExtension = ".graph.yaml";
-
+    const std::string GraphFileExtension = ".graph.yaml";
+    const std::string VertexFileExtension = ".vertex.yaml";
+    const std::string EdgeFileExtension = ".edge.yaml";
 }
 
 template <typename FileTypeTag> 
@@ -248,7 +249,7 @@ protected:
             throw std::runtime_error("Graph already exists");
         }
 
-        auto version = graphar::InfoVersion::Parse("gar/v1").value();
+        auto version = graphar::InfoVersion::Parse(GraphVersion).value();
 
         // Vertex Info
         std::unordered_map<std::string, const VerticesSchema*> type_schema;
@@ -267,9 +268,9 @@ protected:
             vertex_infos.push_back(graphar::CreateVertexInfo(
                 vertices_schema.type, vertices_schema.chunk_size,
                 pgs, {}, 
-                "vertex/" + vertices_schema.type + "/", version));
+                VertexPathPrefix + vertices_schema.type + "/", version));
             REQUIRE(!vertex_infos.back()->Dump().has_error());
-            REQUIRE(vertex_infos.back()->Save(output_path + vertices_schema.type + ".vertex.yaml").ok());
+            REQUIRE(vertex_infos.back()->Save(output_path + vertices_schema.type + VertexFileExtension).ok());
             type_schema[vertices_schema.type] = &vertices_schema;
         }
 
@@ -303,9 +304,9 @@ protected:
                 edges_schema.src_type, edges_schema.type, edges_schema.dst_type, 
                 edge_chunk_size, src_chunk_size, dst_chunk_size, edges_schema.directed,
                 adjacent_lists,
-                pgs, "edge/" + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + "/", version));
+                pgs, EdgePathPrefix + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + "/", version));
             REQUIRE(!edges_infos.back()->Dump().has_error());
-            REQUIRE(edges_infos.back()->Save(output_path + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + ".edge.yaml").ok());
+            REQUIRE(edges_infos.back()->Save(output_path + edges_schema.src_type + "_" + edges_schema.type + "_" + edges_schema.dst_type + EdgeFileExtension).ok());
         }
 
         // Graph Info
