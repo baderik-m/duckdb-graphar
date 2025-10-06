@@ -9,13 +9,9 @@ FetchContent_MakeAvailable(Catch2)
 get_property(catch_targets GLOBAL PROPERTY Catch2_IMPORTED_TARGETS)
 log_done()
 
-# include_directories(${DUCKDB_INCLUDES})
-# include_directories(${EXTENSION_INCLUDES})
 get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2 INTERFACE_INCLUDE_DIRECTORIES)
-# include_directories(${CATCH2_INCLUDE_DIRS})
-# add_subdirectory(scalar_functions)
-# include_directories(${EXTENSION_ROOT_DIR}/tests/fixture)
-# unittest
+
+# Unittests
 # add_subdirectory(storage)
 add_subdirectory(table_functions)
 add_subdirectory(scalar_functions)
