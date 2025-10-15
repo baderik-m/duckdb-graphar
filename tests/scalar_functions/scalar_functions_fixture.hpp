@@ -69,7 +69,7 @@ public:
         vertices[529] =  {529, {{"hash_phone_no", int32_t{5290}}, {"first_name", std::string{"Person"}}, {"last_name", std::string{"no "} + std::to_string(529)}}};;
         for (int i = 1; i < 30; ++i) {
             edges[2*(i-1)] = {0, i, {{"friend_score", int32_t{1}}, {"created_at", std::string{"2021-01-01"}}, {"tmp_", float{0.1}}}};
-            edges[2*(i-1)+1] = {30, i, {{"friend_score", int32_t{2}}, {"created_at", std::string{"2021-11-01"}}, {"tmp_", float{0.1}}}};
+            edges[2*(i-1)+1] = {i, 30, {{"friend_score", int32_t{2}}, {"created_at", std::string{"2021-11-01"}}, {"tmp_", float{0.1}}}};
             vertices[i] =  {i, {{"hash_phone_no", int32_t{i * 10}}, {"first_name", std::string{"Person"}}, {"last_name", std::string{"no "} + std::to_string(i)}}};
         }
         for (int i = 31; i <= 528; ++i) {

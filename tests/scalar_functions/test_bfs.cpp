@@ -89,7 +89,19 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
         }
+        SECTION("Reverse path 1-hop"){
+            INFO("Set args");
 
+            args.SetValue(0, 0, Value::BIGINT(2));
+            args.SetValue(1, 0, Value::BIGINT(1));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            auto result_data = FlatVector::GetData<bool>(result);
+            REQUIRE(result_data[0] == false);  
+            INFO("Finish execute test");
+        }
         SECTION("2 hop"){
             INFO("Set args");
 
@@ -117,7 +129,19 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
         }
+        SECTION("Reverse path 2-hop"){
+            INFO("Set args");
 
+            args.SetValue(0, 0, Value::BIGINT(4));
+            args.SetValue(1, 0, Value::BIGINT(1));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            auto result_data = FlatVector::GetData<bool>(result);
+            REQUIRE(result_data[0] == false);  
+            INFO("Finish execute test");
+        }
     }
     SECTION("bfs_length"){
         ScalarFunction bfs_length_path = Bfs::GetFunctionLength(); 
@@ -164,6 +188,19 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
         }
+        SECTION("Reverse path 1-hop"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(2));
+            args.SetValue(1, 0, Value::BIGINT(1));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            auto result_data = FlatVector::GetData<long long>(result);
+            REQUIRE(result_data[0] == -1);  
+            INFO("Finish execute test");
+        }
         SECTION("2 hop"){
             INFO("Set args");
 
@@ -186,6 +223,19 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             
+            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            auto result_data = FlatVector::GetData<long long>(result);
+            REQUIRE(result_data[0] == -1);  
+            INFO("Finish execute test");
+        }
+        SECTION("Reverse path 2-hop"){
+            INFO("Set args");
+
+            args.SetValue(0, 0, Value::BIGINT(4));
+            args.SetValue(1, 0, Value::BIGINT(1));
+            args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
+
+            INFO("Execute test");
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
             auto result_data = FlatVector::GetData<long long>(result);
             REQUIRE(result_data[0] == -1);  
