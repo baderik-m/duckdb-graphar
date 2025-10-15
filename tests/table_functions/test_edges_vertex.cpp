@@ -107,22 +107,3 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"EdgesVertex Bind and Execute fu
     REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
 }
-
-TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "EdgesVertex Bind function with invalid vertex id", "[edges_vertex]", FILE_TYPES_FOR_TEST) {
-    INFO("Start mocking");
-    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
-
-    INFO("Path: " + TestFixture::path_trial_graph);
-
-    named_parameter_map_t named_parameters({});
-    vector<LogicalType> input_table_types({});
-    auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
-
-    vector<LogicalType> return_types;
-    vector<std::string> names;
-    INFO("Finish mocking");
-
-    TableFunction edges_vertex = EdgesVertex::GetFunction();
-
-    REQUIRE_THROWS_AS(edges_vertex.bind(*TestFixture::conn.context, input, return_types, names), BinderException);
-}

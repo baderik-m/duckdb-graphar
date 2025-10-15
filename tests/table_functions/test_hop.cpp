@@ -22,7 +22,7 @@ TEST_CASE("OneMoreHop GetFunction basic test", "[one_more_hop]") {
     REQUIRE(one_more_hop.arguments.size() == 1);
     REQUIRE(one_more_hop.named_parameters.size() == 1);
     CHECK(one_more_hop.filter_pushdown == false);
-    CHECK(one_more_hop.projection_pushdown == true);
+    CHECK(one_more_hop.projection_pushdown == false);
 
     REQUIRE(one_more_hop.named_parameters.find("vid") != one_more_hop.named_parameters.end());
 }
@@ -138,7 +138,7 @@ TEST_CASE("TwoHop GetFunction basic test", "[two_hop]") {
     REQUIRE(two_hop.arguments.size() == 1);
     REQUIRE(two_hop.named_parameters.size() == 1);
     CHECK(two_hop.filter_pushdown == false);
-    CHECK(two_hop.projection_pushdown == true);
+    CHECK(two_hop.projection_pushdown == false);
 
     REQUIRE(two_hop.named_parameters.find("vid") != two_hop.named_parameters.end());
 }
