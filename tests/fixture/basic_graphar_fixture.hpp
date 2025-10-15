@@ -138,6 +138,8 @@ struct FileTypeOrc {};
 struct FileTypeJson {};
 
 #define FILE_TYPES_FOR_TEST FileTypeParquet
+// Uncomment after fixing the import from csv
+// #define FILE_TYPES_FOR_TEST FileTypeParquet,FileTypeCsv
 
 namespace {
     const std::string GraphVersion = "gar/v1";
