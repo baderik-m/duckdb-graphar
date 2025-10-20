@@ -145,7 +145,7 @@ namespace {
     const std::string GraphVersion = "gar/v1";
     const std::string VertexPathPrefix = "vertex/";
     const std::string EdgePathPrefix = "edge/";
-    constexpr std::string_view PrefixToRemove = "prefix:";
+    const std::string PrefixToRemove = "prefix:";
     const std::string GraphFileExtension = ".graph.yaml";
     const std::string VertexFileExtension = ".vertex.yaml";
     const std::string EdgeFileExtension = ".edge.yaml";
@@ -346,7 +346,7 @@ protected:
             }
         }   
 
-        return graph_path;
+        return graph_folder.string();
     }
 
 };

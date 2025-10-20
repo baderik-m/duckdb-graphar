@@ -84,9 +84,9 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind function inv
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind and Execute functions vertex with properties", "[read_vertices]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
-    vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+    vector<Value> inputs({Value(TestFixture::path_feature_graph)});
     
-    INFO("Path: " + TestFixture::path_trial_feature_graph);
+    INFO("Path: " + TestFixture::path_feature_graph);
 
     named_parameter_map_t named_parameters({{"type", Value("Person")}});
     vector<LogicalType> input_table_types({});

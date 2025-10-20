@@ -8,7 +8,12 @@ template <typename FileTypeTag>
 class TableFunctionsFixture: public BasicGrapharFixture<FileTypeTag> {
 protected:
     std::string path_trial_graph;
-    std::string path_trial_feature_graph;
+    std::string path_edges_trial_graph;
+    std::string folder_trial_graph;
+
+    std::string path_feature_graph;
+    std::string path_edges_feature_graph;
+    std::string folder_feature_graph;
     static duckdb::TableFunctionBindInput CreateMockBindInput(duckdb::vector<duckdb::Value> &inputs, duckdb::named_parameter_map_t &named_parameters, duckdb::vector<duckdb::LogicalType> &input_table_types) {
         duckdb::vector<std::string> input_table_names;
         duckdb::TableFunction table_function;
@@ -21,7 +26,7 @@ protected:
 public:
     ~TableFunctionsFixture() = default;
     TableFunctionsFixture(): BasicGrapharFixture<FileTypeTag>() {
-        path_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
+        folder_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
             "trial", 
             {
                 VerticesSchema(
@@ -53,7 +58,9 @@ public:
                 )
             }
         );
-        path_trial_feature_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
+        path_trial_graph = folder_trial_graph + "/trial" + GraphFileExtension;
+        path_edges_trial_graph = folder_trial_graph + "/Person_knows_Person" + EdgeFileExtension;
+        folder_feature_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
             "trial_f", 
             {
                 VerticesSchema(
@@ -89,5 +96,7 @@ public:
                 )
             }
         );
+        path_feature_graph = folder_feature_graph + "/trial_f" + GraphFileExtension;
+        path_edges_feature_graph = folder_feature_graph + "/Person_knows_Person" + EdgeFileExtension;
     };
 };

@@ -19,7 +19,7 @@ protected:
 public:
     ~ScalarFunctionsFixture() = default;
     ScalarFunctionsFixture(): BasicGrapharFixture<FileTypeTag>() {
-        path_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
+        std::string folder_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
             "trial", 
             {
                 VerticesSchema(
@@ -61,7 +61,8 @@ public:
                 )
             }
         );
-        
+        path_trial_graph = folder_trial_graph + "/trial" + GraphFileExtension;
+
         std::vector<VertexData> vertices(530);
         std::vector<EdgeData> edges(556);
         vertices[0] = {0, {{"hash_phone_no", int32_t{0}}, {"first_name", std::string{"Person"}}, {"last_name", std::string{"no_"} + std::to_string(0)}}};
@@ -76,7 +77,7 @@ public:
             edges[27 + i] = {i-1, i, {{"friend_score", int32_t{2}}, {"created_at", std::string{"2022-01-01"}}, {"tmp_", float{0.1}}}}, 
             vertices[i] = {i, {{"hash_phone_no", int32_t{i * 10}}, {"first_name", std::string{"Person"}}, {"last_name", std::string{"no "} + std::to_string(i)}}};
         }
-        path_large_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
+        std::string folder_large_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
             "long_graph", 
             {
                 VerticesSchema(
@@ -102,7 +103,7 @@ public:
                 )
             }
         );
-        
+        path_large_graph = folder_large_graph + "/long_graph" + GraphFileExtension;
         
     };
 

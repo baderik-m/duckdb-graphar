@@ -29,9 +29,10 @@ TEST_CASE("OneMoreHop GetFunction basic test", "[one_more_hop]") {
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute functions vertex without properties", "[one_more_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking data for bind");
-    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+    vector<Value> inputs({Value(TestFixture::path_edges_trial_graph)});
 
     INFO("Path: " + TestFixture::path_trial_graph);
+    INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("1")}});
     vector<LogicalType> input_table_types({});
@@ -70,9 +71,10 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute fu
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind function with invalid vertex id", "[one_more_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
-    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+    vector<Value> inputs({Value(TestFixture::path_edges_trial_graph)});
 
     INFO("Path: " + TestFixture::path_trial_graph);
+    INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("3141")}});
     vector<LogicalType> input_table_types({});
@@ -89,9 +91,10 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind function with 
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute functions vertex with properties", "[one_more_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
-    vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+    vector<Value> inputs({Value(TestFixture::path_edges_feature_graph)});
 
-    INFO("Path: " + TestFixture::path_trial_feature_graph);
+    INFO("Path: " + TestFixture::path_feature_graph);
+    INFO("Path edges: " + TestFixture::path_edges_feature_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("2")}});
     vector<LogicalType> input_table_types({});
@@ -145,9 +148,10 @@ TEST_CASE("TwoHop GetFunction basic test", "[two_hop]") {
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functions vertex without properties", "[two_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking data for bind");
-    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+    vector<Value> inputs({Value(TestFixture::path_edges_trial_graph)});
 
     INFO("Path: " + TestFixture::path_trial_graph);
+    INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("1")}});
     vector<LogicalType> input_table_types({});
@@ -186,9 +190,10 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functi
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind function with invalid vertex id", "[two_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
-    vector<Value> inputs({Value(TestFixture::path_trial_graph)});
+    vector<Value> inputs({Value(TestFixture::path_edges_trial_graph)});
 
     INFO("Path: " + TestFixture::path_trial_graph);
+    INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("3141")}});
     vector<LogicalType> input_table_types({});
@@ -205,9 +210,10 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind function with inva
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"TwoHop Bind and Execute functions vertex with properties", "[two_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
-    vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+    vector<Value> inputs({Value(TestFixture::path_edges_feature_graph)});
 
-    INFO("Path: " + TestFixture::path_trial_feature_graph);
+    INFO("Path: " + TestFixture::path_feature_graph);
+    INFO("Path edges: " + TestFixture::path_edges_feature_graph);
 
     named_parameter_map_t named_parameters({{"vid", Value("2")}});
     vector<LogicalType> input_table_types({});

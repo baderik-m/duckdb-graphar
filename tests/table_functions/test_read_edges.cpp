@@ -91,9 +91,9 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute fun
 
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute functions edge with property", "[read_edges]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
-    vector<Value> inputs({Value(TestFixture::path_trial_feature_graph)});
+    vector<Value> inputs({Value(TestFixture::path_feature_graph)});
 
-    INFO("Path: " + TestFixture::path_trial_feature_graph);
+    INFO("Path: " + TestFixture::path_feature_graph);
 
     named_parameter_map_t named_parameters({{"src", Value("Person")}, {"dst", Value("Person")}, {"type", Value("knows")}});
     vector<LogicalType> input_table_types({});
