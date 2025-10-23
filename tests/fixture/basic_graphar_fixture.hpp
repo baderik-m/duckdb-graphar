@@ -239,10 +239,9 @@ protected:
         ){
         std::filesystem::path graph_folder;
         do {
-            graph_folder = tmp_folder / GetFileTypeName() / (std::to_string(num_graph) + "_" + graph_name);
-            ++num_graph;
+            graph_folder = tmp_folder / GetFileTypeName() / (std::to_string(num_graph++) + "_" + graph_name);
         } while(std::filesystem::exists(graph_folder));
-
+        
         graph_folders.push_back(graph_folder);
         const std::string output_path = graph_folder.string() + "/";
         const std::string graph_path = output_path + graph_name + GraphFileExtension;
