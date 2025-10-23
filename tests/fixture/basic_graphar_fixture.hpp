@@ -16,6 +16,7 @@
 #include <variant>
 #include <fstream>
 #include <filesystem>
+#include <atomic>
 
 using PropertyValue = std::variant<int32_t, int64_t, float, double, std::string, bool>;
 
@@ -154,7 +155,7 @@ namespace {
 template <typename FileTypeTag> 
 class BasicGrapharFixture { 
 private:
-    static size_t num_graph;
+    inline static std::atomic<size_t> num_graph = 0;
     std::filesystem::path tmp_folder;
     std::vector<std::filesystem::path> graph_folders;
     static constexpr graphar::FileType GetFileType() {
@@ -350,6 +351,3 @@ protected:
     }
 
 };
-
-template <typename FileTypeTag> 
-size_t BasicGrapharFixture<FileTypeTag>::num_graph = 0;
