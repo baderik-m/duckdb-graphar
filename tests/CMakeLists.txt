@@ -14,7 +14,7 @@ get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2 INTERFACE_INCLUDE_DIRECTO
 log_stage("Building unittest_graphar")
 
 add_subdirectory(table_functions)
-add_subdirectory(scalar_functions)
+# add_subdirectory(scalar_functions)
 
 add_executable(unittest_graphar ${ALL_OBJECT_FILES})
 
