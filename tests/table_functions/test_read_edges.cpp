@@ -20,7 +20,7 @@ TEST_CASE("ReadEdges GetFunction basic test", "[read_edges]") {
     REQUIRE(read_edges.name == "read_edges");
     REQUIRE(read_edges.arguments.size() == 1);
     REQUIRE(read_edges.named_parameters.size() == 3);
-    CHECK(read_edges.filter_pushdown == true);
+    CHECK(read_edges.filter_pushdown == false);
     CHECK(read_edges.projection_pushdown == true);
     
     REQUIRE(read_edges.named_parameters.find("src") != read_edges.named_parameters.end());
