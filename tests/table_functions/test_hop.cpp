@@ -54,11 +54,15 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute fu
     INFO("Finish bind test");
 
     TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
+    INFO("Prepare func_init_input");
 
     unique_ptr<GlobalTableFunctionState> gstate;
     REQUIRE_NOTHROW(gstate = one_more_hop.init_global(*TestFixture::conn.context, func_init_input));
+    INFO("Finish init global state");
 
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    INFO("Prepare func_input");
+    
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
 
@@ -116,11 +120,15 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute fun
     INFO("Finish bind test");
 
     TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
+    INFO("Prepare func_init_input");
 
     unique_ptr<GlobalTableFunctionState> gstate;
     REQUIRE_NOTHROW(gstate = one_more_hop.init_global(*TestFixture::conn.context, func_init_input));
-    
+    INFO("Finish init global state");
+
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    INFO("Prepare func_input");
+
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
 
@@ -171,13 +179,17 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functi
     REQUIRE(names == vector<std::string>({SRC_GID_COLUMN, DST_GID_COLUMN}));
     REQUIRE(return_types == vector<LogicalType>({LogicalType::BIGINT, LogicalType::BIGINT}));
     INFO("Finish bind test");
-
+    
     TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
-
+    INFO("Prepare func_init_input");
+    
     unique_ptr<GlobalTableFunctionState> gstate;
     REQUIRE_NOTHROW(gstate = two_hop.init_global(*TestFixture::conn.context, func_init_input));
-    
+    INFO("Finish init global state");
+
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    INFO("Prepare func_input");
+
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
 
@@ -235,11 +247,15 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"TwoHop Bind and Execute functio
     INFO("Finish bind test");
     
     TableFunctionInitInput func_init_input(bind_data.get(), vector<column_t>(), {}, nullptr);
+    INFO("Prepare func_init_input");
 
     unique_ptr<GlobalTableFunctionState> gstate;
     REQUIRE_NOTHROW(gstate = two_hop.init_global(*TestFixture::conn.context, func_init_input));
-    
+    INFO("Finish init global state");
+
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
+    INFO("Prepare func_input");
+
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
 
