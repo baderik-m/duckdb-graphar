@@ -34,7 +34,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute fu
     INFO("Path: " + TestFixture::path_trial_graph);
     INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
-    named_parameter_map_t named_parameters({{"vid", Value("1")}});
+    named_parameter_map_t named_parameters({{"vid", Value::BIGINT(1)}});
     vector<LogicalType> input_table_types({});
     auto bind_input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
@@ -80,7 +80,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind function with 
     INFO("Path: " + TestFixture::path_trial_graph);
     INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
-    named_parameter_map_t named_parameters({{"vid", Value("3141")}});
+    named_parameter_map_t named_parameters({{"vid", Value::BIGINT(3141)}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
@@ -100,7 +100,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute fun
     INFO("Path: " + TestFixture::path_feature_graph);
     INFO("Path edges: " + TestFixture::path_edges_feature_graph);
 
-    named_parameter_map_t named_parameters({{"vid", Value("2")}});
+    named_parameter_map_t named_parameters({{"vid", Value::BIGINT(2)}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
@@ -161,7 +161,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functi
     INFO("Path: " + TestFixture::path_trial_graph);
     INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
-    named_parameter_map_t named_parameters({{"vid", Value("1")}});
+    named_parameter_map_t named_parameters({{"vid", Value::BIGINT(1)}});
     vector<LogicalType> input_table_types({});
     auto bind_input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
@@ -207,7 +207,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind function with inva
     INFO("Path: " + TestFixture::path_trial_graph);
     INFO("Path edges: " + TestFixture::path_edges_trial_graph);
 
-    named_parameter_map_t named_parameters({{"vid", Value("3141")}});
+    named_parameter_map_t named_parameters({{"vid", Value::BIGINT(3141)}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 
@@ -227,7 +227,7 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"TwoHop Bind and Execute functio
     INFO("Path: " + TestFixture::path_feature_graph);
     INFO("Path edges: " + TestFixture::path_edges_feature_graph);
 
-    named_parameter_map_t named_parameters({{"vid", Value("2")}});
+    named_parameter_map_t named_parameters({{"vid", Value(2)}});
     vector<LogicalType> input_table_types({});
     auto input = TestFixture::CreateMockBindInput(inputs, named_parameters, input_table_types);
 

@@ -225,7 +225,7 @@ protected:
     duckdb::DuckDB db;
     duckdb::Connection conn;
     
-    BasicGrapharFixture(): db(nullptr), conn(db), tmp_folder(std::filesystem::temp_directory_path() / "duckdb_graphar/data/") {conn.Query("PRAGMA enable_profiling; SET logging_level = 'TRACE'; SET graphar_time_logging=true;");};
+    BasicGrapharFixture(): db(nullptr), conn(db), tmp_folder(std::filesystem::temp_directory_path() / "duckdb_graphar/data/") {};
     ~BasicGrapharFixture(){
         for (const auto& graph_folder : graph_folders){
             std::filesystem::remove_all(graph_folder);
