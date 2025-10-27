@@ -153,7 +153,6 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute fun
         tmp.Reset();
         REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, tmp));
     }
-    if(tmp.size() > 0) res.Append(tmp, true);
 
     INFO("Checking results");
     REQUIRE(res.size() == 3);  // 2 3; 2 4; 3 4;
@@ -223,7 +222,6 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functi
         tmp.Reset();
         REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, tmp));
     }
-    if(tmp.size() > 0) res.Append(tmp, true);
 
     INFO("Checking results");
     REQUIRE(res.size() == 6); // 1 2; 1 3; 2 3; 2 4; 3 4; 3 5;

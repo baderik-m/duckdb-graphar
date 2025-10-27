@@ -82,9 +82,17 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute fun
 
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, res));
+    REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        tmp.Initialize(*TestFixture::conn.context, return_types);
+        REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
+    }
 
     INFO("Checking results");
     REQUIRE(res.size() == 7);
@@ -126,8 +134,17 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute fun
 
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
+    
     INFO("Execute test");
-    REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, res));
+    REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        tmp.Initialize(*TestFixture::conn.context, return_types);
+        REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
+    }
 
     INFO("Checking results");
     REQUIRE(res.size() == 7);
