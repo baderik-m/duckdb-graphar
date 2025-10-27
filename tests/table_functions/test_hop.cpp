@@ -62,18 +62,28 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind and Execute fu
 
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate);
     INFO("Prepare func_input");
-    
+
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, res));
-    REQUIRE((res.size(), res.ColumnCount()) == (3, 2)); // 1 2; 1 3; 2 3;
+    REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, tmp));
+    }
+    res.Append(tmp, true);
+
+    INFO("Checking results");
+    REQUIRE(res.size() == 3); // 1 2; 1 3; 2 3;
+    REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
 }
 
-// Uncomment after fixing check invalid vertex id
-/*
+/* Uncomment after fixing check invalid vertex id
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "OneMoreHop Bind function with invalid vertex id", "[one_more_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_edges_trial_graph)});
@@ -133,13 +143,23 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"OneMoreHop Bind and Execute fun
 
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, res));
-    REQUIRE((res.size(), res.ColumnCount()) == (3, 2)); // 2 3; 2 4; 3 4;
+    REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        REQUIRE_NOTHROW(one_more_hop.function(*TestFixture::conn.context, func_input, tmp));
+    }
+    res.Append(tmp, true);
+
+    INFO("Checking results");
+    REQUIRE(res.size() == 3);  // 2 3; 2 4; 3 4;
+    REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
 }
-
 
 
 TEST_CASE("TwoHop GetFunction basic test", "[two_hop]") {
@@ -193,14 +213,25 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind and Execute functi
 
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, res));
-    REQUIRE((res.size(), res.ColumnCount()) == (6, 2)); // 1 2; 1 3; 2 3; 2 4; 3 4; 3 5;
+    REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, tmp));
+    }
+    res.Append(tmp, true);
+
+    INFO("Checking results");
+    REQUIRE(res.size() == 6); // 1 2; 1 3; 2 3; 2 4; 3 4; 3 5;
+    REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
 }
-// Uncomment after fixing check invalid vertex id
-/*
+
+/* Uncomment after fixing check invalid vertex id
 TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "TwoHop Bind function with invalid vertex id", "[two_hop]", FILE_TYPES_FOR_TEST) {
     INFO("Start mocking");
     vector<Value> inputs({Value(TestFixture::path_edges_trial_graph)});
@@ -260,9 +291,20 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"TwoHop Bind and Execute functio
 
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
-
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
+    
     INFO("Execute test");
-    REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, res));
-    REQUIRE((res.size(), res.ColumnCount()) == (5, 2)); // 2 3; 2 4; 3 4; 3 5; 4 5;
+    REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        REQUIRE_NOTHROW(two_hop.function(*TestFixture::conn.context, func_input, tmp));
+    }
+    res.Append(tmp, true);
+
+    INFO("Checking results");
+    REQUIRE(res.size() == 5); // 2 3; 2 4; 3 4; 3 5; 4 5;
+    REQUIRE(res.ColumnCount() == 2); 
     INFO("Finish execute test");
 }

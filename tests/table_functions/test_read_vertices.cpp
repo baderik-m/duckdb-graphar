@@ -55,11 +55,22 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind and Execute 
     REQUIRE_NOTHROW(gstate = read_vertices.init_global(*TestFixture::conn.context, func_init_input));
 
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate.get());
+
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, res));
+    REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, tmp));
+    }
+    res.Append(tmp, true);
+
+    INFO("Checking results");
     REQUIRE(res.size() == 5);
     REQUIRE(res.ColumnCount() == 2);
     INFO("Finish execute test");
@@ -113,11 +124,22 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind and Execute f
     REQUIRE_NOTHROW(gstate = read_vertices.init_global(*TestFixture::conn.context, func_init_input));
 
     TableFunctionInput func_input(bind_data.get(), nullptr, gstate.get());
+    
     DataChunk res;
     res.Initialize(*TestFixture::conn.context, return_types);
+    DataChunk tmp;
+    tmp.Initialize(*TestFixture::conn.context, return_types);
 
     INFO("Execute test");
-    REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, res));
+    REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, tmp));
+    while (tmp.size() > 0){
+        res.Append(tmp, true);
+        tmp.Reset();
+        REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, tmp));
+    }
+    res.Append(tmp, true);
+
+    INFO("Checking results");
     REQUIRE(res.size() == 5);
     REQUIRE(res.ColumnCount() == 4);
     INFO("Finish execute test");
