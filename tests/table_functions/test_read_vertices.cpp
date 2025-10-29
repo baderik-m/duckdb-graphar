@@ -64,9 +64,9 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadVertices Bind and Execute 
     INFO("Execute test");
     REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, tmp));
     while (tmp.size() > 0){
-        res.Append(tmp, true);
+        INFO("Size of the result part: " << tmp.size());
+        REQUIRE_NOTHROW(res.Append(tmp, true));
         tmp.Reset();
-        tmp.Initialize(*TestFixture::conn.context, return_types);
         REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, tmp));
     }
 
@@ -133,9 +133,8 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture,"ReadVertices Bind and Execute f
     INFO("Execute test");
     REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, res));
     while (tmp.size() > 0){
-        res.Append(tmp, true);
-        tmp.Reset();
-        tmp.Initialize(*TestFixture::conn.context, return_types);
+        INFO("Size of the result part: " << tmp.size());
+        REQUIRE_NOTHROW(res.Append(tmp, true));
 
         REQUIRE_NOTHROW(read_vertices.function(*TestFixture::conn.context, func_input, tmp));
     }

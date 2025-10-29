@@ -1,5 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
 
 #include <filesystem>  
@@ -88,9 +89,9 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute fun
     INFO("Execute test");
     REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
     while (tmp.size() > 0){
-        res.Append(tmp, true);
+        INFO("Size of the result part: " << tmp.size());
+        REQUIRE_NOTHROW(res.Append(tmp, true));
         tmp.Reset();
-        tmp.Initialize(*TestFixture::conn.context, return_types);
         REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
     }
 
@@ -140,9 +141,10 @@ TEMPLATE_TEST_CASE_METHOD(TableFunctionsFixture, "ReadEdges Bind and Execute fun
     INFO("Execute test");
     REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
     while (tmp.size() > 0){
-        res.Append(tmp, true);
+        INFO("Size of the result part: " << tmp.size());
+        REQUIRE_NOTHROW(res.Append(tmp, true));
+
         tmp.Reset();
-        tmp.Initialize(*TestFixture::conn.context, return_types);
         REQUIRE_NOTHROW(read_edges.function(*TestFixture::conn.context, func_input, tmp));
     }
 
