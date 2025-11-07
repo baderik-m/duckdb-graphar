@@ -171,7 +171,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            auto result_data = FlatVector::GetData<long long>(result);
+            auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == 1);  
             INFO("Finish execute test");
         }
@@ -184,7 +184,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            auto result_data = FlatVector::GetData<long long>(result);
+            auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
         }
@@ -197,7 +197,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            auto result_data = FlatVector::GetData<long long>(result);
+            auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
         }
@@ -210,7 +210,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            auto result_data = FlatVector::GetData<long long>(result);
+            auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == 2);  
             INFO("Finish execute test");
         }
@@ -224,7 +224,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             INFO("Execute test");
             
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            auto result_data = FlatVector::GetData<long long>(result);
+            auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
         }
@@ -237,7 +237,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            auto result_data = FlatVector::GetData<long long>(result);
+            auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
         }
@@ -314,20 +314,20 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 
             args.SetValue(1, 0, Value::BIGINT(528));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            REQUIRE(FlatVector::GetData<long long>(result)[0] == 500);
+            REQUIRE(FlatVector::GetData<int64_t>(result)[0] == 500);
             BENCHMARK("Exists path") {
                 bfs_length_path.function(args, state, result);
-                return FlatVector::GetData<long long>(result)[0];  
+                return FlatVector::GetData<int64_t>(result)[0];  
             };
 
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(529));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
             REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
-            REQUIRE(FlatVector::GetData<long long>(result)[0] == -1);
+            REQUIRE(FlatVector::GetData<int64_t>(result)[0] == -1);
             BENCHMARK("No Path") {
                 bfs_length_path.function(args, state, result);
-                return FlatVector::GetData<long long>(result)[0];  
+                return FlatVector::GetData<int64_t>(result)[0];  
             };
         }
     }
