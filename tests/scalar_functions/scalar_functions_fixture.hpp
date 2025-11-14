@@ -1,29 +1,36 @@
 #pragma once
 #include "basic_graphar_fixture.hpp"
 
-
+struct ExpressionStateWithDeps {
+    std::shared_ptr<duckdb::BoundFunctionExpression> bound_expr;
+    std::shared_ptr<duckdb::ExpressionExecutorState> executor_state;
+    std::shared_ptr<duckdb::ExpressionExecutor> executor;
+    duckdb::ExpressionState state;
+    
+    ExpressionStateWithDeps(std::shared_ptr<duckdb::BoundFunctionExpression> expr,
+                        std::shared_ptr<duckdb::ExpressionExecutorState> exec_state, duckdb::ClientContext &context)
+        : bound_expr(std::move(expr)), executor_state(std::move(exec_state)), 
+        executor(std::make_shared<duckdb::ExpressionExecutor>(context)), state(*bound_expr, *executor_state) {
+            executor_state->executor = executor.get();
+        }
+};
 template <typename FileTypeTag> 
 class ScalarFunctionsFixture: public BasicGrapharFixture<FileTypeTag> {
-protected:
+public:
     std::string path_trial_graph;
     std::string path_large_graph;
-    struct TestExpressionState : public duckdb::ExpressionState {
-    std::shared_ptr<duckdb::ExpressionExecutor> executor_owner;
 
-    TestExpressionState(
-        const duckdb::BoundFunctionExpression &expr,
-        duckdb::ExpressionExecutorState &root,
-        std::shared_ptr<duckdb::ExpressionExecutor> executor)
-        : duckdb::ExpressionState(expr, root), executor_owner(std::move(executor)) {}
-    };
-public:
     ~ScalarFunctionsFixture() = default;
     ScalarFunctionsFixture(): BasicGrapharFixture<FileTypeTag>() {
-        std::string folder_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
-            "trial", 
+        constexpr const char* VERTEX_LABEL = "Person";
+        constexpr const char* EDGE_LABEL = "knows"; 
+
+        const std::string trial_graph_name = "trial";
+        const std::string folder_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
+            trial_graph_name, 
             {
                 VerticesSchema(
-                    "Person", 1024, 
+                    VERTEX_LABEL, 1024, 
                     {PropertySchema("hash_phone_no", "int32", false, true)}, 
                     {
                         {1, {{"hash_phone_no", int32_t{10}}}}, 
@@ -41,7 +48,7 @@ public:
             }, 
             {
                 EdgesSchema(
-                    "Person", "knows", "Person", 0, false, 
+                    VERTEX_LABEL, EDGE_LABEL, VERTEX_LABEL, 0, false, 
                     {}, 
                     {
                         {1, 2}, 
@@ -61,7 +68,8 @@ public:
                 )
             }
         );
-        path_trial_graph = folder_trial_graph + "/trial" + GraphFileExtension;
+        REQUIRE(!folder_trial_graph.empty());
+        path_trial_graph = folder_trial_graph + "/" + trial_graph_name + GraphFileExtension;
 
         std::vector<VertexData> vertices(530);
         std::vector<EdgeData> edges(556);
@@ -77,11 +85,12 @@ public:
             edges[27 + i] = {i-1, i, {{"friend_score", int32_t{2}}, {"created_at", std::string{"2022-01-01"}}, {"tmp_", float{0.1}}}}, 
             vertices[i] = {i, {{"hash_phone_no", int32_t{i * 10}}, {"first_name", std::string{"Person"}}, {"last_name", std::string{"no "} + std::to_string(i)}}};
         }
-        std::string folder_large_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
-            "long_graph", 
+        const std::string lagre_graph_name = "large_graph";
+        const std::string folder_large_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
+            lagre_graph_name, 
             {
                 VerticesSchema(
-                    "Person", 1024, 
+                    VERTEX_LABEL, 1024, 
                     {
                         PropertySchema("hash_phone_no", "int32", false, true), 
                         PropertySchema("first_name", "string", false, false),
@@ -92,7 +101,7 @@ public:
             }, 
             {
                 EdgesSchema(
-                    "Person", "knows", "Person", 0, false, 
+                    VERTEX_LABEL, EDGE_LABEL, VERTEX_LABEL, 0, false, 
                     {
                         PropertySchema("friend_score", "int32", false, false),
                         PropertySchema("created_at", "string", false, false), 
@@ -103,24 +112,20 @@ public:
                 )
             }
         );
-        path_large_graph = folder_large_graph + "/long_graph" + GraphFileExtension;
-        
+        REQUIRE(!folder_large_graph.empty());
+        path_large_graph = folder_large_graph + "/" + lagre_graph_name + GraphFileExtension;   
     };
-
-    std::shared_ptr<duckdb::ExpressionState> MockingState(
+    
+    static ExpressionStateWithDeps MockingState(
         duckdb::LogicalType return_type,
         duckdb::ScalarFunction func,
-        std::shared_ptr<duckdb::ExpressionExecutor> executor
+        duckdb::ClientContext &context
+        
     ) {
-        auto bound_expr = std::make_shared<duckdb::BoundFunctionExpression>(
-            return_type, func, std::vector<duckdb::unique_ptr<duckdb::Expression>>{}, nullptr, false
-        );
-
+        auto bound_expr = std::make_shared<duckdb::BoundFunctionExpression>(return_type, func, std::vector<duckdb::unique_ptr<duckdb::Expression>>{}, nullptr, false);
+        REQUIRE(bound_expr != nullptr);
         auto executor_state = std::make_shared<duckdb::ExpressionExecutorState>();
-        executor_state->executor = executor.get();
 
-        auto expression_state = std::make_shared<duckdb::ExpressionState>(*bound_expr, *executor_state);
-
-        return expression_state;
+        return ExpressionStateWithDeps(bound_expr, executor_state, context);
     }
 };

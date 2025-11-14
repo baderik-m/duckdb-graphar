@@ -48,18 +48,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
         ScalarFunction bfs_exist_path = Bfs::GetFunctionExists();        
 
         INFO("Mocking state");
-        duckdb::BoundFunctionExpression bound_expr(
-            LogicalType::BOOLEAN,
-            bfs_exist_path,
-            {},
-            nullptr,
-            false
-        );
-        duckdb::ExpressionExecutorState executor_state{};
-        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
-
-        executor_state.executor = &executor;
-        duckdb::ExpressionState state(bound_expr, executor_state);
+        auto expression_state = TestFixture::MockingState(LogicalType::BOOLEAN, bfs_exist_path, *TestFixture::conn.context);
 
         duckdb::Vector result(duckdb::LogicalType::BOOLEAN);
 
@@ -71,7 +60,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == true);  
             INFO("Finish execute test");
@@ -84,7 +73,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
@@ -97,7 +86,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
@@ -110,7 +99,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == true);  
             INFO("Finish execute test");
@@ -124,7 +113,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
@@ -137,7 +126,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<bool>(result);
             REQUIRE(result_data[0] == false);  
             INFO("Finish execute test");
@@ -147,18 +136,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
         ScalarFunction bfs_length_path = Bfs::GetFunctionLength(); 
         
         INFO("Mocking state");
-        duckdb::BoundFunctionExpression bound_expr(
-            LogicalType::BIGINT,
-            bfs_length_path,
-            {},
-            nullptr,
-            false
-        );
-        duckdb::ExpressionExecutorState executor_state{};
-        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
-
-        executor_state.executor = &executor;
-        duckdb::ExpressionState state(bound_expr, executor_state);
+        auto expression_state = TestFixture::MockingState(LogicalType::BIGINT, bfs_length_path, *TestFixture::conn.context);
 
         duckdb::Vector result(duckdb::LogicalType::BIGINT);
 
@@ -170,7 +148,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == 1);  
             INFO("Finish execute test");
@@ -183,7 +161,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
@@ -196,7 +174,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
@@ -209,7 +187,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == 2);  
             INFO("Finish execute test");
@@ -223,7 +201,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
 
             INFO("Execute test");
             
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
@@ -236,7 +214,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for tria
             args.SetValue(2, 0, Value(TestFixture::path_trial_graph));
 
             INFO("Execute test");
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             auto result_data = FlatVector::GetData<int64_t>(result);
             REQUIRE(result_data[0] == -1);  
             INFO("Finish execute test");
@@ -252,39 +230,27 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 
         ScalarFunction bfs_exist_path = Bfs::GetFunctionExists();        
 
         INFO("Mocking state");
-        duckdb::BoundFunctionExpression bound_expr(
-            LogicalType::BOOLEAN,
-            bfs_exist_path,
-            {},
-            nullptr,
-            false
-        );
-        duckdb::ExpressionExecutorState executor_state{};
-        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
-
-        executor_state.executor = &executor;
-        duckdb::ExpressionState state(bound_expr, executor_state);
-
+        auto expression_state = TestFixture::MockingState(LogicalType::BOOLEAN, bfs_exist_path, *TestFixture::conn.context);
         duckdb::Vector result(duckdb::LogicalType::BOOLEAN);
         
         SECTION("Long Path 500 hop"){
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(528));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             REQUIRE(FlatVector::GetData<bool>(result)[0] == true);
             BENCHMARK("Exists path") {
-                bfs_exist_path.function(args, state, result);
+                bfs_exist_path.function(args, expression_state.state, result);
                 return FlatVector::GetData<bool>(result)[0];  
             };
 
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(529));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
-            REQUIRE_NOTHROW(bfs_exist_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_exist_path.function(args, expression_state.state, result));
             REQUIRE(FlatVector::GetData<bool>(result)[0] == false);
             BENCHMARK("No Path") {
-                bfs_exist_path.function(args, state, result);
+                bfs_exist_path.function(args, expression_state.state, result);
                 return FlatVector::GetData<bool>(result)[0];  
             };
         }
@@ -294,18 +260,7 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 
         ScalarFunction bfs_length_path = Bfs::GetFunctionLength(); 
         
         INFO("Mocking state");
-        duckdb::BoundFunctionExpression bound_expr(
-            LogicalType::BIGINT,
-            bfs_length_path,
-            {},
-            nullptr,
-            false
-        );
-        duckdb::ExpressionExecutorState executor_state{};
-        duckdb::ExpressionExecutor executor(*TestFixture::conn.context);
-
-        executor_state.executor = &executor;
-        duckdb::ExpressionState state(bound_expr, executor_state);
+        auto expression_state = TestFixture::MockingState(LogicalType::BIGINT, bfs_length_path, *TestFixture::conn.context);
 
         duckdb::Vector result(duckdb::LogicalType::BIGINT);
 
@@ -313,20 +268,20 @@ TEMPLATE_TEST_CASE_METHOD(ScalarFunctionsFixture, "BFS Execute function for 500 
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(528));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             REQUIRE(FlatVector::GetData<int64_t>(result)[0] == 500);
             BENCHMARK("Exists path") {
-                bfs_length_path.function(args, state, result);
+                bfs_length_path.function(args, expression_state.state, result);
                 return FlatVector::GetData<int64_t>(result)[0];  
             };
 
             args.SetValue(0, 0, Value::BIGINT(0));
             args.SetValue(1, 0, Value::BIGINT(529));
             args.SetValue(2, 0, Value(TestFixture::path_large_graph));
-            REQUIRE_NOTHROW(bfs_length_path.function(args, state, result));
+            REQUIRE_NOTHROW(bfs_length_path.function(args, expression_state.state, result));
             REQUIRE(FlatVector::GetData<int64_t>(result)[0] == -1);
             BENCHMARK("No Path") {
-                bfs_length_path.function(args, state, result);
+                bfs_length_path.function(args, expression_state.state, result);
                 return FlatVector::GetData<int64_t>(result)[0];  
             };
         }

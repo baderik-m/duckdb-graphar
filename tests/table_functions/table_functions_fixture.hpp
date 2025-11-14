@@ -14,6 +14,7 @@ protected:
     std::string path_feature_graph;
     std::string path_edges_feature_graph;
     std::string folder_feature_graph;
+    
     static duckdb::TableFunctionBindInput CreateMockBindInput(duckdb::vector<duckdb::Value> &inputs, duckdb::named_parameter_map_t &named_parameters, duckdb::vector<duckdb::LogicalType> &input_table_types) {
         duckdb::vector<std::string> input_table_names;
         duckdb::TableFunction table_function;
@@ -26,12 +27,15 @@ protected:
 public:
     ~TableFunctionsFixture() = default;
     TableFunctionsFixture(): BasicGrapharFixture<FileTypeTag>() {
+        constexpr const char* VERTEX_LABEL = "Person";
+        constexpr const char* EDGE_LABEL = "knows"; 
+
         folder_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
             "trial", 
             {
                 VerticesSchema(
-                    "Person", 1024, 
-                    {PropertySchema("hash_phone_no", "int32", false, true)}, 
+                    VERTEX_LABEL, 1024, 
+                    { PropertySchema("hash_phone_no", "int32", false, true) }, 
                     {
                         {1, {{"hash_phone_no", int32_t{10}}}}, 
                         {2, {{"hash_phone_no", int32_t{20}}}}, 
@@ -43,7 +47,7 @@ public:
             }, 
             {
                 EdgesSchema(
-                    "Person", "knows", "Person", 0, false, 
+                    VERTEX_LABEL, EDGE_LABEL, VERTEX_LABEL, 0, false, 
                     {}, 
                     {
                         {1, 2}, 
@@ -59,7 +63,7 @@ public:
             }
         );
         path_trial_graph = folder_trial_graph + "/trial" + GraphFileExtension;
-        path_edges_trial_graph = folder_trial_graph + "/Person_knows_Person" + EdgeFileExtension;
+        path_edges_trial_graph = folder_trial_graph + "/" +  VERTEX_LABEL + "_" + EDGE_LABEL + "_" + VERTEX_LABEL+ EdgeFileExtension;
         folder_feature_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
             "trial_f", 
             {
@@ -81,8 +85,11 @@ public:
             }, 
             {
                 EdgesSchema(
-                    "Person", "knows", "Person", 0, false, 
-                    {PropertySchema("friend_score", "int32", false, false), PropertySchema("created_at", "string", false, false), PropertySchema("tmp_", "float", false, false)}, 
+                    VERTEX_LABEL, EDGE_LABEL, VERTEX_LABEL, 0, false, 
+                    {
+                        PropertySchema("friend_score", "int32", false, false),
+                        PropertySchema("created_at", "string", false, false), 
+                        PropertySchema("tmp_", "float", false, false)}, 
                     {
                         {1, 2, {{"friend_score", int32_t{1}}, {"created_at", std::string{"2021-01-01"}}, {"tmp_", float{0.1}}}}, 
                         {1, 3, {{"friend_score", int32_t{2}}, {"created_at", std::string{"2022-01-01"}}, {"tmp_", float{0.1}}}}, 
@@ -97,6 +104,6 @@ public:
             }
         );
         path_feature_graph = folder_feature_graph + "/trial_f" + GraphFileExtension;
-        path_edges_feature_graph = folder_feature_graph + "/Person_knows_Person" + EdgeFileExtension;
+        path_edges_feature_graph = folder_feature_graph + "/" +  VERTEX_LABEL + "_" + EDGE_LABEL + "_" + VERTEX_LABEL + EdgeFileExtension;
     };
 };

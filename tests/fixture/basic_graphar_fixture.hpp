@@ -17,6 +17,7 @@
 #include <fstream>
 #include <filesystem>
 #include <atomic>
+#include <concepts>
 
 using PropertyValue = std::variant<int32_t, int64_t, float, double, std::string, bool>;
 
@@ -75,7 +76,7 @@ struct VerticesSchema {
 
 
 template <typename T>
-requires(std::is_same_v<T, graphar::builder::Vertex> || std::is_same_v<T, graphar::builder::Edge>)
+requires (std::same_as<T, graphar::builder::Vertex> || std::same_as<T, graphar::builder::Edge>)
 static void FillProperties(T& obj, const std::vector<PropertySchema>& propeties_schema, const std::unordered_map<std::string, PropertyValue>& properties_data) {
     for (auto ind_p = 0; ind_p < propeties_schema.size(); ++ind_p){
         const auto& prop_schema = propeties_schema[ind_p];
@@ -133,12 +134,13 @@ static void FillProperties(T& obj, const std::vector<PropertySchema>& propeties_
     } 
 }
 
-struct FileTypeParquet {};
-struct FileTypeCsv {};
-struct FileTypeOrc {};
-struct FileTypeJson {};
+struct FileTypeJson { FileTypeJson(){}; };
 
-#define FILE_TYPES_FOR_TEST FileTypeParquet,FileTypeCsv
+struct FileTypeOrc { FileTypeOrc(){}; };
+struct FileTypeParquet { FileTypeParquet(){}; };
+struct FileTypeCsv { FileTypeCsv(){}; };
+
+#define FILE_TYPES_FOR_TEST FileTypeCsv,FileTypeParquet
 
 namespace {
     const std::string GraphVersion = "gar/v1";
@@ -223,13 +225,6 @@ protected:
     duckdb::DuckDB db;
     duckdb::Connection conn;
     
-    BasicGrapharFixture(): db(nullptr), conn(db), tmp_folder(std::filesystem::temp_directory_path() / "duckdb_graphar/data/") {};
-    ~BasicGrapharFixture(){
-        for (const auto& graph_folder : graph_folders){
-            std::filesystem::remove_all(graph_folder);
-        }
-    }
-
     std::string CreateTestGraph(
             const std::string& graph_name, 
             const std::vector<VerticesSchema>& vertices_list,
@@ -347,4 +342,11 @@ protected:
         return graph_folder.string();
     }
 
+public:
+    BasicGrapharFixture(): db(nullptr), conn(db), tmp_folder(std::filesystem::temp_directory_path() / "duckdb_graphar/data/") {};
+    ~BasicGrapharFixture(){
+        for (const auto& graph_folder : graph_folders){
+            REQUIRE_NOTHROW(std::filesystem::remove_all(graph_folder));
+        }
+    }
 };

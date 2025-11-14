@@ -115,12 +115,12 @@ jobs:
           ./scripts/install-cli.sh || exit 1
           ./scripts/generate-graphar-data.sh || exit 1
 
-      - name: Run Tests DuckDB
+      - name: Run Tests Extension via DuckDB Queries
         if: matrix.os == 'ubuntu-22.04'
         run: |
           build/_deps/duckdb-build/test/unittest "[graphar]" --reporter console  || exit 1
       
-      - name: Run Tests Extension
+      - name: Run Unittests for extension
         run: |
           build/_deps/duckdb-build/extension/duckdb_graphar/tests/unittest_graphar  --reporter console  || exit 1
 
