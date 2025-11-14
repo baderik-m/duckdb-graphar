@@ -172,14 +172,7 @@ private:
         else if constexpr (std::is_same_v<FileTypeTag, FileTypeJson>) return "json";
         else throw std::logic_error("Unsupported file type tag");
     };
-    void EnsureTestDataDirectory(){
-        std::filesystem::create_directories(tmp_folder);
-    
-        if (!std::filesystem::exists(tmp_folder)) {
-            throw std::runtime_error("Failed to create test data directory: " + tmp_folder.string());
-        }
-    };
-    bool RemovePrefix(const std::string& path) const{        
+    bool RemovePrefix(const std::string& path) const noexcept{        
         struct Guard {
             std::string tmp_path;
             bool cleanup = false;
