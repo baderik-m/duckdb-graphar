@@ -25,9 +25,9 @@ public:
         constexpr const char* VERTEX_LABEL = "Person";
         constexpr const char* EDGE_LABEL = "knows"; 
 
-        const std::string trial_graph_name = "trial";
+        constexpr const char* TRIAL_GRAPH_NAME = "trial";
         const std::string folder_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
-            trial_graph_name, 
+            TRIAL_GRAPH_NAME, 
             {
                 VerticesSchema(
                     VERTEX_LABEL, 1024, 
@@ -69,7 +69,7 @@ public:
             }
         );
         REQUIRE(!folder_trial_graph.empty());
-        path_trial_graph = folder_trial_graph + "/" + trial_graph_name + GraphFileExtension;
+        path_trial_graph = folder_trial_graph + "/" + TRIAL_GRAPH_NAME + GraphFileExtension;
 
         std::vector<VertexData> vertices(530);
         std::vector<EdgeData> edges(556);
@@ -85,9 +85,9 @@ public:
             edges[27 + i] = {i-1, i, {{"friend_score", int32_t{2}}, {"created_at", std::string{"2022-01-01"}}, {"tmp_", float{0.1}}}}, 
             vertices[i] = {i, {{"hash_phone_no", int32_t{i * 10}}, {"first_name", std::string{"Person"}}, {"last_name", std::string{"no "} + std::to_string(i)}}};
         }
-        const std::string lagre_graph_name = "large_graph";
+        constexpr const char* LARGE_GRAPH_NAME = "large_graph";
         const std::string folder_large_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
-            lagre_graph_name, 
+            LARGE_GRAPH_NAME, 
             {
                 VerticesSchema(
                     VERTEX_LABEL, 1024, 
@@ -113,7 +113,7 @@ public:
             }
         );
         REQUIRE(!folder_large_graph.empty());
-        path_large_graph = folder_large_graph + "/" + lagre_graph_name + GraphFileExtension;   
+        path_large_graph = folder_large_graph + "/" + LARGE_GRAPH_NAME + GraphFileExtension;   
     };
     
     static ExpressionStateWithDeps MockingState(

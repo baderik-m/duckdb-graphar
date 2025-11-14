@@ -67,7 +67,6 @@ install(TARGETS duckdb_graphar_loadable_extension
 install(DIRECTORY include/ DESTINATION include
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
-
 log_done()
 
 if(BUILD_TESTS)

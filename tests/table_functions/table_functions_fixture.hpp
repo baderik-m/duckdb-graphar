@@ -29,9 +29,10 @@ public:
     TableFunctionsFixture(): BasicGrapharFixture<FileTypeTag>() {
         constexpr const char* VERTEX_LABEL = "Person";
         constexpr const char* EDGE_LABEL = "knows"; 
+        constexpr const char* TRIAL_GRAPH_NAME = "trial"; 
 
         folder_trial_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
-            "trial", 
+            TRIAL_GRAPH_NAME, 
             {
                 VerticesSchema(
                     VERTEX_LABEL, 1024, 
@@ -62,13 +63,15 @@ public:
                 )
             }
         );
-        path_trial_graph = folder_trial_graph + "/trial" + GraphFileExtension;
+        path_trial_graph = folder_trial_graph + "/" + TRIAL_GRAPH_NAME + GraphFileExtension;
         path_edges_trial_graph = folder_trial_graph + "/" +  VERTEX_LABEL + "_" + EDGE_LABEL + "_" + VERTEX_LABEL+ EdgeFileExtension;
+
+        constexpr const char* FEATURE_GRAPH_NAME = "trial_f"; 
         folder_feature_graph = BasicGrapharFixture<FileTypeTag>::CreateTestGraph(
-            "trial_f", 
+            FEATURE_GRAPH_NAME, 
             {
                 VerticesSchema(
-                    "Person", 1024, 
+                    VERTEX_LABEL, 1024, 
                     {
                         PropertySchema("hash_phone_no", "int32", false, true), 
                         PropertySchema("first_name", "string", false, false),
@@ -103,7 +106,7 @@ public:
                 )
             }
         );
-        path_feature_graph = folder_feature_graph + "/trial_f" + GraphFileExtension;
+        path_feature_graph = folder_feature_graph + "/" + FEATURE_GRAPH_NAME + GraphFileExtension;
         path_edges_feature_graph = folder_feature_graph + "/" +  VERTEX_LABEL + "_" + EDGE_LABEL + "_" + VERTEX_LABEL + EdgeFileExtension;
     };
 };
